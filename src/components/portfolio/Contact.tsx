@@ -3,6 +3,8 @@ import { motion } from 'framer-motion';
 import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 import { Send, Mail, MapPin, Phone } from 'lucide-react';
+import { NewsletterForm } from './NewsletterForm';
+import { AppointmentBooking } from './AppointmentBooking';
 
 export function Contact() {
   const { register, handleSubmit, reset, formState: { isSubmitting } } = useForm();
@@ -11,56 +13,60 @@ export function Contact() {
     // Mock API call
     await new Promise(resolve => setTimeout(resolve, 1500));
     console.log(data);
-    toast.success("Message sent! I'll get back to you soon.");
+    toast.success("Message envoyé ! Je vous répondrai très bientôt.");
     reset();
   };
 
   return (
-    <section id="contact" className="py-24 px-6 md:px-12 lg:px-24 bg-card">
+    <section id="contact" className="py-32 px-6 md:px-12 lg:px-24 bg-card relative overflow-hidden">
       <div className="max-w-7xl mx-auto">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-16">
+        {/* Newsletter & Booking Row */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 mb-32">
+          <motion.div
+            initial={{ opacity: 0, x: -20 }}
+            whileInView={{ opacity: 1, x: 0 }}
+            viewport={{ once: true }}
+          >
+            <NewsletterForm />
+          </motion.div>
+          <motion.div
+            initial={{ opacity: 0, x: 20 }}
+            whileInView={{ opacity: 1, x: 0 }}
+            viewport={{ once: true }}
+          >
+            <AppointmentBooking />
+          </motion.div>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 lg:gap-32 items-start">
           <div>
             <motion.h2
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
-              className="text-4xl md:text-6xl font-bold mb-8"
+              className="text-5xl md:text-7xl font-bold mb-12 tracking-tighter"
             >
-              Let's create something <span className="text-primary italic">extraordinary</span>.
+              Parlons de votre <span className="text-primary italic">prochain projet</span>.
             </motion.h2>
             
-            <p className="text-xl text-muted-foreground mb-12 max-w-md">
-              Whether you have a fully-formed idea or just a spark, I'd love to help you bring it to life.
+            <p className="text-xl text-muted-foreground mb-16 max-w-md font-medium leading-relaxed">
+              Que vous ayez une idée précise ou juste une intuition, je suis là pour vous aider à la concrétiser.
             </p>
 
-            <div className="space-y-8">
-              <div className="flex items-center gap-6">
-                <div className="w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center text-primary">
-                  <Mail className="w-6 h-6" />
-                </div>
-                <div>
-                  <h4 className="font-bold">Email Me</h4>
-                  <p className="text-muted-foreground">hello@creative.portfolio</p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-12">
+              <div className="space-y-4">
+                <h4 className="text-[10px] font-black uppercase tracking-[0.3em] text-primary">Contact</h4>
+                <div className="space-y-2">
+                  <p className="font-bold text-lg">hello@creative.portfolio</p>
+                  <p className="text-muted-foreground font-medium">+33 (0) 6 12 34 56 78</p>
                 </div>
               </div>
               
-              <div className="flex items-center gap-6">
-                <div className="w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center text-primary">
-                  <MapPin className="w-6 h-6" />
-                </div>
-                <div>
-                  <h4 className="font-bold">Location</h4>
-                  <p className="text-muted-foreground">Shoreditch, London</p>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-6">
-                <div className="w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center text-primary">
-                  <Phone className="w-6 h-6" />
-                </div>
-                <div>
-                  <h4 className="font-bold">Phone</h4>
-                  <p className="text-muted-foreground">+44 (0) 20 7946 0958</p>
+              <div className="space-y-4">
+                <h4 className="text-[10px] font-black uppercase tracking-[0.3em] text-primary">Localisation</h4>
+                <div className="space-y-2">
+                  <p className="font-bold text-lg">Paris, France</p>
+                  <p className="text-muted-foreground font-medium">Disponible pour missions remote</p>
                 </div>
               </div>
             </div>
@@ -70,60 +76,60 @@ export function Contact() {
             initial={{ opacity: 0, scale: 0.95 }}
             whileInView={{ opacity: 1, scale: 1 }}
             viewport={{ once: true }}
-            className="p-8 md:p-12 rounded-3xl bg-background border border-border shadow-xl"
+            className="p-8 md:p-12 rounded-[3rem] bg-background border border-border shadow-2xl relative"
           >
-            <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-2">
-                  <label className="text-sm font-bold uppercase tracking-wider opacity-70">Name</label>
+            <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div className="space-y-3">
+                  <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Nom Complet</label>
                   <input
                     {...register('name', { required: true })}
-                    className="w-full bg-secondary/50 border-none rounded-xl px-5 py-4 focus:ring-2 focus:ring-primary transition-all"
-                    placeholder="John Doe"
+                    className="w-full bg-secondary/30 border-border rounded-2xl px-6 py-5 focus:ring-2 focus:ring-primary transition-all font-medium"
+                    placeholder="Jean Dupont"
                   />
                 </div>
-                <div className="space-y-2">
-                  <label className="text-sm font-bold uppercase tracking-wider opacity-70">Email</label>
+                <div className="space-y-3">
+                  <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Email</label>
                   <input
                     {...register('email', { required: true })}
                     type="email"
-                    className="w-full bg-secondary/50 border-none rounded-xl px-5 py-4 focus:ring-2 focus:ring-primary transition-all"
-                    placeholder="john@example.com"
+                    className="w-full bg-secondary/30 border-border rounded-2xl px-6 py-5 focus:ring-2 focus:ring-primary transition-all font-medium"
+                    placeholder="jean@exemple.com"
                   />
                 </div>
               </div>
 
-              <div className="space-y-2">
-                <label className="text-sm font-bold uppercase tracking-wider opacity-70">Subject</label>
+              <div className="space-y-3">
+                <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Sujet</label>
                 <select
                   {...register('subject')}
-                  className="w-full bg-secondary/50 border-none rounded-xl px-5 py-4 focus:ring-2 focus:ring-primary transition-all"
+                  className="w-full bg-secondary/30 border-border rounded-2xl px-6 py-5 focus:ring-2 focus:ring-primary transition-all font-medium appearance-none"
                 >
-                  <option>New Project</option>
+                  <option>Nouveau Projet</option>
                   <option>Collaboration</option>
-                  <option>Just saying hi</option>
+                  <option>Demande d'information</option>
                 </select>
               </div>
 
-              <div className="space-y-2">
-                <label className="text-sm font-bold uppercase tracking-wider opacity-70">Message</label>
+              <div className="space-y-3">
+                <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Votre Message</label>
                 <textarea
                   {...register('message', { required: true })}
                   rows={5}
-                  className="w-full bg-secondary/50 border-none rounded-xl px-5 py-4 focus:ring-2 focus:ring-primary transition-all resize-none"
-                  placeholder="Tell me about your project..."
+                  className="w-full bg-secondary/30 border-border rounded-2xl px-6 py-5 focus:ring-2 focus:ring-primary transition-all resize-none font-medium"
+                  placeholder="Dites-m'en plus sur votre projet..."
                 />
               </div>
 
               <button
                 disabled={isSubmitting}
-                className="w-full py-5 bg-primary text-primary-foreground rounded-xl font-bold text-lg flex items-center justify-center gap-3 hover:shadow-xl hover:shadow-primary/20 transition-all disabled:opacity-70"
+                className="w-full py-6 bg-primary text-primary-foreground rounded-2xl font-black text-lg flex items-center justify-center gap-3 hover:shadow-2xl hover:shadow-primary/30 transition-all disabled:opacity-70 active:scale-[0.98]"
               >
                 {isSubmitting ? (
-                  <div className="w-6 h-6 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  <div className="w-6 h-6 border-3 border-white/30 border-t-white rounded-full animate-spin" />
                 ) : (
                   <>
-                    Send Message
+                    Envoyer le message
                     <Send className="w-5 h-5" />
                   </>
                 )}
