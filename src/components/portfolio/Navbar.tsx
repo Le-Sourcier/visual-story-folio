@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Menu, X, ArrowRight } from 'lucide-react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 
 export function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const location = useLocation();
+  const navigate = useNavigate();
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 50);
@@ -17,7 +18,7 @@ export function Navbar() {
   const navLinks = [
     { name: 'Travaux', href: '/#work' },
     { name: 'À Propos', href: '/#about' },
-    { name: 'Blog', href: '/blog', isExternal: true },
+    { name: 'Blog', href: '/blog' },
     { name: 'Contact', href: '/#contact' },
   ];
 
@@ -30,8 +31,22 @@ export function Navbar() {
         if (element) {
           element.scrollIntoView({ behavior: 'smooth' });
         }
+      } else {
+        navigate(href);
       }
     }
+  };
+
+  const handleLetsTalk = () => {
+    if (location.pathname === '/') {
+      const element = document.getElementById('booking');
+      if (element) {
+        element.scrollIntoView({ behavior: 'smooth' });
+      }
+    } else {
+      navigate('/#booking');
+    }
+    setIsOpen(false);
   };
 
   return (
@@ -64,10 +79,8 @@ export function Navbar() {
                   <a 
                     href={link.href}
                     onClick={(e) => {
-                      if (location.pathname === '/') {
-                        e.preventDefault();
-                        handleLinkClick(link.href);
-                      }
+                      e.preventDefault();
+                      handleLinkClick(link.href);
                     }}
                     className="text-xs font-black uppercase tracking-[0.2em] hover:text-primary transition-colors relative group block"
                   >
@@ -89,6 +102,7 @@ export function Navbar() {
           <motion.button 
             initial={{ opacity: 0, scale: 0.8 }}
             animate={{ opacity: 1, scale: 1 }}
+            onClick={handleLetsTalk}
             className="px-8 py-3 bg-primary text-primary-foreground rounded-full font-black text-xs uppercase tracking-widest hover:shadow-xl hover:shadow-primary/20 transition-all flex items-center gap-2 group"
           >
             Let's Talk
@@ -134,12 +148,8 @@ export function Navbar() {
                     <a 
                       href={link.href}
                       onClick={(e) => {
-                        if (location.pathname === '/') {
-                          e.preventDefault();
-                          handleLinkClick(link.href);
-                        } else {
-                          setIsOpen(false);
-                        }
+                        e.preventDefault();
+                        handleLinkClick(link.href);
                       }}
                       className="text-5xl font-black tracking-tighter hover:text-primary transition-colors block"
                     >
@@ -156,6 +166,15 @@ export function Navbar() {
                   )}
                 </motion.div>
               ))}
+              <motion.button
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.5 }}
+                onClick={handleLetsTalk}
+                className="text-5xl font-black tracking-tighter text-primary flex items-center gap-4 group text-left"
+              >
+                LET'S TALK <ArrowRight className="w-10 h-10 group-hover:translate-x-4 transition-transform" />
+              </motion.button>
             </div>
 
             <div className="mt-auto">
