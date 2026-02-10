@@ -15,7 +15,10 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   const [theme, setTheme] = useState<Theme>(() => {
     const saved = localStorage.getItem('theme');
     if (saved === 'light' || saved === 'dark') return saved;
-    return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    if (typeof window !== 'undefined') {
+      return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    }
+    return 'light';
   });
 
   const [isTransitioning, setIsTransitioning] = useState(false);
@@ -26,27 +29,33 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     root.classList.remove('light', 'dark');
     root.classList.add(theme);
     localStorage.setItem('theme', theme);
+    
+    // Smooth transition for global elements when the class changes
+    root.style.transition = 'background-color 0.6s ease-in-out, color 0.6s ease-in-out';
   }, [theme]);
 
   const toggleTheme = (event?: React.MouseEvent) => {
     const newTheme = theme === 'light' ? 'dark' : 'light';
     
+    // Always provide a transition even if no event is present, 
+    // but allow the component to handle the lack of coordinates.
+    setIsTransitioning(true);
     if (event) {
       setTransitionPosition({ x: event.clientX, y: event.clientY });
-      setIsTransitioning(true);
-      
-      // We change the theme slightly after the animation starts to catch the mid-point
-      // Increased duration in ThemeTransition.tsx to 1.1s, so we adjust timings here.
-      setTimeout(() => {
-        setTheme(newTheme);
-      }, 400); // 400ms is a good sweet spot for a 1.1s animation
-
-      setTimeout(() => {
-        setIsTransitioning(false);
-      }, 1200); // Wait for the full animation + exit to finish
-    } else {
-      setTheme(newTheme);
     }
+    
+    // Sequence optimized for the directional sweep:
+    // 0ms: Sweep animation starts in ThemeTransition component.
+    // 600ms: Theme changes (overlay should be fully covering the screen by now).
+    // 1200ms: Transition state ends, allowing for exit animations and interaction.
+    
+    setTimeout(() => {
+      setTheme(newTheme);
+    }, 600); 
+
+    setTimeout(() => {
+      setIsTransitioning(false);
+    }, 1400); 
   };
 
   return (
