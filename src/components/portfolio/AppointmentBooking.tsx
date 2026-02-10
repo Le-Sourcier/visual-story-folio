@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Calendar as CalendarIcon, Clock, ChevronRight, Check, MessageSquare, AlertCircle } from 'lucide-react';
+import { Calendar as CalendarIcon, Clock, ChevronRight, Check, MessageSquare, AlertCircle, User, Mail, ArrowLeft } from 'lucide-react';
 import { Calendar } from '../ui/calendar';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
@@ -15,85 +15,129 @@ export function AppointmentBooking() {
   const [selectedTime, setSelectedTime] = useState<string | null>(null);
   const [sujet, setSujet] = useState("");
   const [urgence, setUrgence] = useState("non-urgent");
+  const [nom, setNom] = useState("");
+  const [email, setEmail] = useState("");
 
   const times = ["09:00", "10:00", "11:00", "14:00", "15:00", "16:00"];
 
-  const handleBook = () => {
-    if (!sujet) {
-      toast.error("Veuillez renseigner le sujet de votre demande.");
+  const handleNextToStep2 = () => {
+    if (!nom || !email || !sujet) {
+      toast.error("Veuillez remplir tous les champs obligatoires (Nom, Email, Sujet).");
       return;
     }
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      toast.error("Veuillez entrer une adresse email valide.");
+      return;
+    }
+    setStep(2);
+  };
+
+  const handleBook = () => {
+    if (!selectedTime) {
+      toast.error("Veuillez choisir un horaire.");
+      return;
+    }
+    console.log("Rendez-vous réservé:", { nom, email, sujet, urgence, date, selectedTime });
     toast.success("Rendez-vous réservé avec succès !");
     setStep(3);
   };
 
   return (
-    <div id="booking" className="p-8 md:p-12 rounded-[2.5rem] bg-card border border-border shadow-2xl overflow-hidden relative">
+    <div id="booking" className="p-6 sm:p-8 md:p-12 rounded-[1.5rem] sm:rounded-[2.5rem] bg-card border border-border shadow-2xl overflow-hidden relative">
       <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 blur-[100px] -z-10" />
       
-      <div className="flex items-center gap-4 mb-12">
-        <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center text-primary">
-          <CalendarIcon className="w-7 h-7" />
+      <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4 mb-8 sm:mb-12 text-center sm:text-left">
+        <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-primary/10 flex items-center justify-center text-primary shrink-0">
+          <CalendarIcon className="w-6 h-6 sm:w-7 sm:h-7" />
         </div>
         <div>
-          <h3 className="text-3xl font-black tracking-tight">Prendre rendez-vous</h3>
+          <h3 className="text-2xl sm:text-3xl font-black tracking-tight">Prendre rendez-vous</h3>
           <p className="text-sm text-muted-foreground font-medium italic">Discutons de votre projet en direct</p>
         </div>
       </div>
 
-      <div className="min-h-[400px]">
+      <div className="min-h-fit sm:min-h-[450px]">
         <AnimatePresence mode="wait">
           {step === 1 && (
             <motion.div 
               key="step1"
-              initial={{ opacity: 0, x: 20 }} 
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -20 }}
-              className="space-y-10"
+              initial={{ opacity: 0, y: 10 }} 
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              className="space-y-8 sm:space-y-10"
             >
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12">
                 <div className="space-y-4">
-                  <label className="text-[10px] font-black uppercase tracking-widest text-primary">1. Choisir une date</label>
-                  <div className="bg-background border border-border rounded-3xl p-4 shadow-inner inline-block">
+                  <label className="text-[10px] font-black uppercase tracking-widest text-primary block text-center lg:text-left">1. Choisir une date</label>
+                  <div className="bg-background border border-border rounded-3xl p-2 sm:p-4 shadow-inner flex justify-center w-full max-w-sm mx-auto lg:max-w-none">
                     <Calendar
                       mode="single"
                       selected={date}
                       onSelect={setDate}
                       locale={fr}
-                      className="rounded-md"
+                      className="rounded-md scale-90 sm:scale-100 origin-center"
                     />
                   </div>
                 </div>
 
-                <div className="space-y-8">
-                  <div className="space-y-4">
-                    <label className="text-[10px] font-black uppercase tracking-widest text-primary flex items-center gap-2">
-                      <MessageSquare className="w-3 h-3" /> Sujet de la demande
-                    </label>
+                <div className="space-y-6">
+                  <label className="text-[10px] font-black uppercase tracking-widest text-primary block text-center lg:text-left">2. Vos informations</label>
+                  
+                  <div className="grid grid-cols-1 gap-4">
+                    <div className="space-y-2">
+                      <Label className="text-xs font-bold flex items-center gap-2">
+                        <User className="w-3 h-3 text-primary" /> Nom complet
+                      </Label>
+                      <Input 
+                        placeholder="Jean Dupont"
+                        value={nom}
+                        onChange={(e) => setNom(e.target.value)}
+                        className="h-11 sm:h-12 rounded-xl bg-background border-border"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label className="text-xs font-bold flex items-center gap-2">
+                        <Mail className="w-3 h-3 text-primary" /> Email
+                      </Label>
+                      <Input 
+                        type="email"
+                        placeholder="jean@exemple.com"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        className="h-11 sm:h-12 rounded-xl bg-background border-border"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label className="text-xs font-bold flex items-center gap-2">
+                      <MessageSquare className="w-3 h-3 text-primary" /> Sujet de la demande
+                    </Label>
                     <Input 
-                      placeholder="Ex: Refonte site e-commerce, Identité visuelle..."
+                      placeholder="Ex: Refonte site e-commerce..."
                       value={sujet}
                       onChange={(e) => setSujet(e.target.value)}
-                      className="h-14 rounded-2xl bg-background border-border focus:ring-primary/20"
+                      className="h-11 sm:h-12 rounded-xl bg-background border-border"
                     />
                   </div>
 
-                  <div className="space-y-4">
-                    <label className="text-[10px] font-black uppercase tracking-widest text-primary flex items-center gap-2">
-                      <AlertCircle className="w-3 h-3" /> Niveau d'urgence
-                    </label>
+                  <div className="space-y-2">
+                    <Label className="text-xs font-bold flex items-center gap-2">
+                      <AlertCircle className="w-3 h-3 text-primary" /> Niveau d'urgence
+                    </Label>
                     <RadioGroup 
                       value={urgence} 
                       onValueChange={setUrgence}
-                      className="flex flex-col sm:flex-row gap-4"
+                      className="flex flex-col sm:flex-row gap-3"
                     >
-                      <div className="flex items-center space-x-3 bg-background p-4 rounded-2xl border border-border hover:border-primary/30 transition-colors flex-1">
+                      <div className="flex items-center space-x-3 bg-background p-3 rounded-xl border border-border hover:border-primary/30 transition-colors flex-1 cursor-pointer">
                         <RadioGroupItem value="non-urgent" id="r1" />
-                        <Label htmlFor="r1" className="font-bold cursor-pointer">Non urgent</Label>
+                        <Label htmlFor="r1" className="font-bold cursor-pointer text-sm flex-1">Non urgent</Label>
                       </div>
-                      <div className="flex items-center space-x-3 bg-background p-4 rounded-2xl border border-border hover:border-primary/30 transition-colors flex-1">
+                      <div className="flex items-center space-x-3 bg-background p-3 rounded-xl border border-border hover:border-primary/30 transition-colors flex-1 cursor-pointer">
                         <RadioGroupItem value="urgent" id="r2" />
-                        <Label htmlFor="r2" className="font-bold cursor-pointer">Urgent 🔥</Label>
+                        <Label htmlFor="r2" className="font-bold cursor-pointer text-sm flex-1">Urgent 🔥</Label>
                       </div>
                     </RadioGroup>
                   </div>
@@ -101,8 +145,8 @@ export function AppointmentBooking() {
               </div>
 
               <button 
-                onClick={() => setStep(2)}
-                className="w-full py-5 bg-primary text-primary-foreground rounded-2xl font-black flex items-center justify-center gap-2 hover:shadow-xl hover:shadow-primary/20 transition-all"
+                onClick={handleNextToStep2}
+                className="w-full py-4 sm:py-5 bg-primary text-primary-foreground rounded-2xl font-black flex items-center justify-center gap-2 hover:shadow-xl hover:shadow-primary/20 transition-all uppercase tracking-widest text-sm"
               >
                 Choisir l'horaire <ChevronRight className="w-4 h-4" />
               </button>
@@ -118,13 +162,13 @@ export function AppointmentBooking() {
               className="space-y-10"
             >
               <div className="space-y-6">
-                <label className="text-[10px] font-black uppercase tracking-widest text-primary">2. Choisir un horaire</label>
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                <label className="text-[10px] font-black uppercase tracking-widest text-primary block text-center sm:text-left">3. Choisir un horaire</label>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4">
                   {times.map(time => (
                     <button
                       key={time}
                       onClick={() => setSelectedTime(time)}
-                      className={`py-5 rounded-2xl font-bold transition-all border ${
+                      className={`py-4 sm:py-5 rounded-xl sm:rounded-2xl font-bold transition-all border text-sm sm:text-base ${
                         selectedTime === time 
                           ? "bg-primary text-primary-foreground border-primary shadow-lg scale-[1.02]" 
                           : "bg-background border-border hover:border-primary/50"
@@ -138,14 +182,14 @@ export function AppointmentBooking() {
               <div className="flex flex-col sm:flex-row gap-4">
                 <button 
                   onClick={() => setStep(1)}
-                  className="flex-1 py-5 border border-border rounded-2xl font-bold hover:bg-secondary transition-all text-sm uppercase tracking-widest"
+                  className="flex-1 py-4 sm:py-5 border border-border rounded-xl sm:rounded-2xl font-bold hover:bg-secondary transition-all text-sm uppercase tracking-widest flex items-center justify-center gap-2"
                 >
-                  Retour
+                  <ArrowLeft className="w-4 h-4" /> Retour
                 </button>
                 <button 
                   disabled={!selectedTime}
                   onClick={handleBook}
-                  className="flex-[2] py-5 bg-primary text-primary-foreground rounded-2xl font-black flex items-center justify-center gap-2 hover:shadow-xl hover:shadow-primary/20 transition-all disabled:opacity-50 uppercase tracking-widest"
+                  className="flex-[2] py-4 sm:py-5 bg-primary text-primary-foreground rounded-xl sm:rounded-2xl font-black flex items-center justify-center gap-2 hover:shadow-xl hover:shadow-primary/20 transition-all disabled:opacity-50 uppercase tracking-widest text-sm"
                 >
                   Confirmer la réservation
                 </button>
@@ -158,23 +202,37 @@ export function AppointmentBooking() {
               key="step3"
               initial={{ opacity: 0, scale: 0.9 }} 
               animate={{ opacity: 1, scale: 1 }}
-              className="text-center py-16 space-y-8"
+              className="text-center py-8 sm:py-16 space-y-6 sm:space-y-8"
             >
-              <div className="w-24 h-24 bg-green-500/20 text-green-500 rounded-full flex items-center justify-center mx-auto">
-                <Check className="w-12 h-12" />
+              <div className="w-20 h-20 sm:w-24 sm:h-24 bg-green-500/20 text-green-500 rounded-full flex items-center justify-center mx-auto">
+                <Check className="w-10 h-10 sm:w-12 sm:h-12" />
               </div>
-              <div className="space-y-2">
-                <h4 className="text-3xl font-black tracking-tight">C'est réservé !</h4>
-                <p className="text-muted-foreground font-medium text-lg">
-                  Nous avons bien noté votre demande pour le sujet : <span className="text-foreground font-bold">"{sujet}"</span>
-                </p>
-                <p className="text-muted-foreground font-medium">
-                  RDV le {date && format(date, 'd MMMM yyyy', { locale: fr })} à {selectedTime}.
+              <div className="space-y-4">
+                <h4 className="text-2xl sm:text-3xl font-black tracking-tight px-4">C'est réservé, {nom} !</h4>
+                <div className="bg-secondary/50 p-4 sm:p-6 rounded-2xl sm:rounded-3xl border border-border max-w-md mx-auto space-y-3">
+                  <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-widest">Récapitulatif</p>
+                  <p className="text-foreground font-bold text-base sm:text-lg leading-tight px-2">
+                    "{sujet}"
+                  </p>
+                  <div className="flex flex-col gap-2 text-muted-foreground font-medium text-sm">
+                    <p className="flex items-center justify-center gap-2">
+                      <CalendarIcon className="w-4 h-4 text-primary" /> {date && format(date, 'd MMMM yyyy', { locale: fr })}
+                    </p>
+                    <p className="flex items-center justify-center gap-2">
+                      <Clock className="w-4 h-4 text-primary" /> {selectedTime}
+                    </p>
+                    <p className="flex items-center justify-center gap-2">
+                      <Mail className="w-4 h-4 text-primary" /> {email}
+                    </p>
+                  </div>
+                </div>
+                <p className="text-muted-foreground font-medium text-sm px-4">
+                  Un email de confirmation vous a été envoyé.
                 </p>
               </div>
               <button 
-                onClick={() => { setStep(1); setSelectedTime(null); setSujet(""); }}
-                className="px-8 py-4 bg-secondary text-foreground rounded-2xl font-black uppercase text-[10px] tracking-widest hover:bg-secondary/80 transition-all"
+                onClick={() => { setStep(1); setSelectedTime(null); setSujet(""); setNom(""); setEmail(""); }}
+                className="px-6 sm:px-8 py-3 sm:py-4 bg-secondary text-foreground rounded-xl sm:rounded-2xl font-black uppercase text-[10px] tracking-widest hover:bg-secondary/80 transition-all"
               >
                 Prendre un autre RDV
               </button>
