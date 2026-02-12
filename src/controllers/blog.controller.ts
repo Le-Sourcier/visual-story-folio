@@ -1,0 +1,69 @@
+import { Request, Response, NextFunction } from 'express';
+import { blogService } from '../services/blog.service.js';
+import { sendSuccess, sendCreated } from '../utils/response.util.js';
+
+export const getAllPosts = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    const published = req.query.published === 'true' ? true : req.query.published === 'false' ? false : undefined;
+    const posts = await blogService.findAll(published);
+    sendSuccess(res, posts, 'Blog posts retrieved successfully');
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const getPostById = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    const post = await blogService.findById(req.params.id);
+    sendSuccess(res, post, 'Blog post retrieved successfully');
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const getPostBySlug = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    const post = await blogService.findBySlug(req.params.slug);
+    sendSuccess(res, post, 'Blog post retrieved successfully');
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const createPost = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    const post = await blogService.create(req.body);
+    sendCreated(res, post, 'Blog post created successfully');
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const updatePost = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    const post = await blogService.update(req.params.id, req.body);
+    sendSuccess(res, post, 'Blog post updated successfully');
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const deletePost = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    await blogService.delete(req.params.id);
+    sendSuccess(res, null, 'Blog post deleted successfully');
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const addComment = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    const comment = await blogService.addComment(req.params.id, req.body);
+    sendCreated(res, comment, 'Comment added successfully');
+  } catch (error) {
+    next(error);
+  }
+};
+
+export default { getAllPosts, getPostById, getPostBySlug, createPost, updatePost, deletePost, addComment };

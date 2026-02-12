@@ -1,0 +1,73 @@
+import Contact from '../models/Contact.js';
+import { IContact } from '../types/entities.types.js';
+import { AppError } from '../middlewares/error.middleware.js';
+import { ErrorCode, HttpStatus } from '../types/response.types.js';
+import { sendEmail } from '../helpers/mailer.js';
+import { contactReceivedTemplate } from '../views/emails/contact.template.js';
+import { config } from '../config/index.js';
+
+class ContactService {
+  async findAll(): Promise<IContact[]> {
+    const contacts = await Contact.findAll({
+      order: [['createdAt', 'DESC']],
+    });
+    return contacts;
+  }
+
+  async findById(id: string): Promise<IContact> {
+    const contact = await Contact.findByPk(id);
+    if (!contact) {
+      throw new AppError('Contact message not found', HttpStatus.NOT_FOUND, ErrorCode.NOT_FOUND);
+    }
+    return contact;
+  }
+
+  async create(data: Omit<IContact, 'id' | 'read' | 'createdAt'>): Promise<IContact> {
+    const contact = await Contact.create(data);
+
+    // Send notification email to admin
+    try {
+      await sendEmail({
+        to: config.admin.email,
+        subject: `Nouveau message de ${data.name}`,
+        html: contactReceivedTemplate({
+          name: data.name,
+          email: data.email,
+          subject: data.subject || 'Sans sujet',
+          message: data.message,
+        }),
+      });
+    } catch {
+      // Don't fail if email sending fails
+    }
+
+    return contact;
+  }
+
+  async markAsRead(id: string): Promise<IContact> {
+    const contact = await Contact.findByPk(id);
+    if (!contact) {
+      throw new AppError('Contact message not found', HttpStatus.NOT_FOUND, ErrorCode.NOT_FOUND);
+    }
+
+    await contact.update({ read: true });
+    return contact;
+  }
+
+  async delete(id: string): Promise<void> {
+    const contact = await Contact.findByPk(id);
+    if (!contact) {
+      throw new AppError('Contact message not found', HttpStatus.NOT_FOUND, ErrorCode.NOT_FOUND);
+    }
+
+    await contact.destroy();
+  }
+
+  async getUnreadCount(): Promise<number> {
+    const count = await Contact.count({ where: { read: false } });
+    return count;
+  }
+}
+
+export const contactService = new ContactService();
+export default contactService;
