@@ -1,0 +1,9 @@
+export { DashboardPage } from './DashboardPage';
+export { ProjectsPage } from './ProjectsPage';
+export { ExperiencesPage } from './ExperiencesPage';
+export { BlogPage } from './BlogPage';
+export { ContactsPage } from './ContactsPage';
+export { AppointmentsPage } from './AppointmentsPage';
+export { TestimonialsPage } from './TestimonialsPage';
+export { NewsletterPage } from './NewsletterPage';
+export { SettingsPage } from './SettingsPage';
