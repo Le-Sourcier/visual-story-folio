@@ -22,9 +22,8 @@ export const createBlogPostValidator = [
     .isLength({ max: 100 })
     .withMessage('Category must be less than 100 characters'),
   body('imageUrl')
+    .optional({ values: 'falsy' })
     .trim()
-    .notEmpty()
-    .withMessage('Image URL is required')
     .isURL()
     .withMessage('Invalid image URL'),
   body('author')
