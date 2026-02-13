@@ -9,22 +9,23 @@ export function NewsletterPage() {
   const { data: subscribers = [], isLoading } = useNewsletterSubscribers();
   const { data: stats } = useNewsletterStats();
 
+  const nlStats = stats as any;
   const statsCards = [
     {
       label: 'Total abonnes',
-      value: stats?.total || subscribers.length,
+      value: nlStats?.total ?? subscribers.length,
       icon: Users,
       color: 'text-blue-500',
     },
     {
       label: 'Abonnes actifs',
-      value: stats?.totalActive || subscribers.filter((s) => s.active).length,
+      value: nlStats?.active ?? nlStats?.totalActive ?? subscribers.filter((s) => s.active).length,
       icon: UserCheck,
       color: 'text-emerald-500',
     },
     {
       label: 'Desinscriptions',
-      value: stats?.totalInactive || subscribers.filter((s) => !s.active).length,
+      value: (nlStats?.total ?? 0) - (nlStats?.active ?? nlStats?.totalActive ?? 0) || subscribers.filter((s) => !s.active).length,
       icon: Mail,
       color: 'text-orange-500',
     },

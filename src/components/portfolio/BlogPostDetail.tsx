@@ -3,7 +3,7 @@ import { useParams, Link, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronLeft, Calendar, Clock, User, Share2, MessageSquare, Send } from 'lucide-react';
 import { blogPosts as mockBlogPosts, BlogPost, Comment } from '../../data/blogMockData';
-import { CodeHighlighter } from './CodeHighlighter';
+import { MarkdownRenderer } from '../shared/MarkdownRenderer';
 import { toast } from 'sonner';
 import { api } from '@/services/api';
 
@@ -70,20 +70,7 @@ export function BlogPostDetail() {
     toast.success("Commentaire ajouté !");
   };
 
-  const renderContent = (htmlContent: string) => {
-    if (!htmlContent) return null;
-    const parts = htmlContent.split(/(<pre><code.*?>[\s\S]*?<\/code><\/pre>)/g);
-    
-    return parts.map((part, index) => {
-      if (part.startsWith('<pre><code')) {
-        const match = part.match(/class="language-(.*?)"/);
-        const lang = match ? match[1] : 'javascript';
-        const code = part.replace(/<pre><code.*?>|<\/code><\/pre>/g, '').trim();
-        return <CodeHighlighter key={index} code={code} language={lang} />;
-      }
-      return <div key={index} className="prose prose-invert prose-primary max-w-none mb-6 font-medium leading-relaxed text-lg text-muted-foreground" dangerouslySetInnerHTML={{ __html: part }} />;
-    });
-  };
+  // Content rendering is handled by the shared MarkdownRenderer component
 
   return (
     <div className="pt-32 pb-24 px-6 md:px-12 lg:px-24 min-h-screen bg-background">
@@ -154,7 +141,7 @@ export function BlogPostDetail() {
         </motion.div>
 
         <article className="mb-24">
-          {renderContent(post.content)}
+          <MarkdownRenderer content={post.content} />
         </article>
 
         <section className="pt-16 border-t border-border">

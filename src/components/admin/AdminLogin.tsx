@@ -1,35 +1,58 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Lock, Mail, Key, ArrowRight, ShieldCheck } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { useLogin } from '@/hooks/queries';
+import { authApi } from '@/services/api';
 import { useAuthStore } from '@/stores/authStore';
+import { toast } from 'sonner';
 
 export function AdminLogin() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
-  const loginMutation = useLogin();
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+  const token = useAuthStore((s) => s.token);
+  const setAuth = useAuthStore((s) => s.setAuth);
+
+  const from = (location.state as any)?.from?.pathname || '/admin/dashboard';
 
   // Redirect if already authenticated
-  if (isAuthenticated) {
-    const from = (location.state as any)?.from?.pathname || '/admin/dashboard';
-    navigate(from, { replace: true });
-  }
+  useEffect(() => {
+    const legacyToken = localStorage.getItem('admin_token');
+    if (isAuthenticated || token || legacyToken) {
+      navigate(from, { replace: true });
+    }
+  }, [isAuthenticated, token, navigate, from]);
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    const from = (location.state as any)?.from?.pathname || '/admin/dashboard';
-    loginMutation.mutate(
-      { email, password },
-      {
-        onSuccess: () => navigate(from, { replace: true }),
+    if (!email || !password) {
+      toast.error('Veuillez remplir tous les champs');
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      // Real API login
+      const data = await authApi.login({ email, password });
+      setAuth(data.user, data.token, data.refreshToken);
+      toast.success('Connexion reussie. Bienvenue !');
+      navigate(from, { replace: true });
+    } catch (error: any) {
+      // If the error is a network error (backend down), show specific message
+      if (error.message?.includes('indisponible') || error.message?.includes('timeout')) {
+        toast.error('Serveur indisponible. Verifiez que le backend est demarre.');
+      } else {
+        toast.error(error.message || 'Identifiants incorrects');
       }
-    );
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -49,7 +72,7 @@ export function AdminLogin() {
             <Lock className="w-10 h-10 text-primary" />
           </div>
           <h1 className="text-4xl font-black tracking-tighter uppercase mb-2">Espace Admin</h1>
-          <p className="text-muted-foreground font-medium italic">Accès restreint aux administrateurs uniquement</p>
+          <p className="text-muted-foreground font-medium italic">Acces restreint aux administrateurs uniquement</p>
         </div>
 
         <div className="bg-card border border-border p-8 md:p-10 rounded-[3rem] shadow-2xl">
@@ -87,9 +110,9 @@ export function AdminLogin() {
             <Button
               type="submit"
               className="w-full h-14 rounded-2xl font-black uppercase tracking-widest text-sm group"
-              disabled={loginMutation.isPending}
+              disabled={loading}
             >
-              {loginMutation.isPending ? (
+              {loading ? (
                 <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
               ) : (
                 <>
@@ -102,7 +125,7 @@ export function AdminLogin() {
 
           <div className="mt-8 pt-8 border-t border-border flex items-center justify-center gap-2 text-muted-foreground">
             <ShieldCheck className="w-4 h-4" />
-            <span className="text-xs font-bold uppercase tracking-wider">Connexion sécurisée SSL</span>
+            <span className="text-xs font-bold uppercase tracking-wider">Connexion securisee SSL</span>
           </div>
         </div>
 

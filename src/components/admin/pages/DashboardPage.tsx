@@ -119,7 +119,7 @@ export function DashboardPage() {
 
   const unread = typeof unreadCount === 'object' ? (unreadCount as any)?.count ?? 0 : unreadCount;
   const nlActive = typeof newsletterStats === 'object'
-    ? (newsletterStats as any)?.totalActive ?? (newsletterStats as any)?.total ?? 0
+    ? (newsletterStats as any)?.active ?? (newsletterStats as any)?.totalActive ?? (newsletterStats as any)?.total ?? 0
     : 0;
 
   // Computed data - seeded from real content counts so charts reflect actual portfolio size

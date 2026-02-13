@@ -125,7 +125,11 @@ function Layout({ children, hideNavFooter = false }: { children: React.ReactNode
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      retry: 1,
+      retry: (failureCount, error) => {
+        // Don't retry on auth errors
+        if (error.message?.includes('Access token') || error.message?.includes('401')) return false;
+        return failureCount < 1;
+      },
       refetchOnWindowFocus: false,
       staleTime: 2 * 60 * 1000, // 2 minutes
     },

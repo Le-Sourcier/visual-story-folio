@@ -2,6 +2,7 @@ export { DashboardPage } from './DashboardPage';
 export { ProjectsPage } from './ProjectsPage';
 export { ExperiencesPage } from './ExperiencesPage';
 export { BlogPage } from './BlogPage';
+export { BlogEditorPage } from './BlogEditorPage';
 export { ContactsPage } from './ContactsPage';
 export { AppointmentsPage } from './AppointmentsPage';
 export { TestimonialsPage } from './TestimonialsPage';

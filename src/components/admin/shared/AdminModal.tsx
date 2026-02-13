@@ -2,14 +2,14 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useUIStore, selectModal } from '@/stores/uiStore';
 import { ProjectForm } from '../forms/ProjectForm';
 import { ExperienceForm } from '../forms/ExperienceForm';
-import { BlogPostForm } from '../forms/BlogPostForm';
 import { TestimonialForm } from '../forms/TestimonialForm';
 
 export function AdminModal() {
   const modal = useUIStore(selectModal);
   const closeModal = useUIStore((s) => s.closeModal);
 
-  if (!modal.isOpen || !modal.type) return null;
+  // Blog is now handled by BlogEditorPage (full page), not modal
+  if (!modal.isOpen || !modal.type || modal.type === 'blog') return null;
 
   const renderForm = () => {
     switch (modal.type) {
@@ -17,8 +17,6 @@ export function AdminModal() {
         return <ProjectForm initialData={modal.data as any} onClose={closeModal} />;
       case 'experience':
         return <ExperienceForm initialData={modal.data as any} onClose={closeModal} />;
-      case 'blog':
-        return <BlogPostForm initialData={modal.data as any} onClose={closeModal} />;
       case 'testimonial':
         return <TestimonialForm initialData={modal.data as any} onClose={closeModal} />;
       default:

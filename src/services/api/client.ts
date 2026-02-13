@@ -49,23 +49,29 @@ class ApiClient {
   }
 
   private async handleResponse<T>(response: Response): Promise<T> {
-    const data = await response.json();
+    let data: unknown;
+    try {
+      data = await response.json();
+    } catch {
+      throw new Error(`HTTP Error: ${response.status} - Invalid JSON response`);
+    }
 
     if (!response.ok) {
       const error = data as ApiError;
 
-      // Handle 401 - Token expired
+      // Only clear tokens on real 401 from the server, don't redirect
       if (response.status === 401) {
         clearTokens();
-        window.location.href = '/admin/login';
       }
 
       throw new Error(error.message || `HTTP Error: ${response.status}`);
     }
 
-    // Extract data from standardized response
-    const apiResponse = data as ApiResponse<T>;
-    return apiResponse.data;
+    // Try to extract data from standardized response, fallback to raw data
+    if (data && typeof data === 'object' && 'data' in (data as Record<string, unknown>)) {
+      return (data as ApiResponse<T>).data;
+    }
+    return data as T;
   }
 
   private async fetchWithTimeout(
@@ -83,6 +89,12 @@ class ApiClient {
         signal: controller.signal,
       });
       return response;
+    } catch (error) {
+      if ((error as Error).name === 'AbortError') {
+        throw new Error('Request timeout');
+      }
+      // Network error (backend not running) - don't redirect, just throw
+      throw new Error('Serveur indisponible. Verifiez que le backend est demarre.');
     } finally {
       clearTimeout(timeoutId);
     }
