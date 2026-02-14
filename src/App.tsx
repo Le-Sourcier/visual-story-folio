@@ -28,6 +28,7 @@ import { ChatbotContainer } from './components/portfolio/chatbot/ChatbotContaine
 import { cvData } from './data/cvData';
 import { useProfile } from './hooks/useProfile';
 import { SeoHead } from './components/shared/SeoHead';
+import { CookieConsent } from './components/portfolio/CookieConsent';
 
 function ScrollToHash() {
   const { hash, pathname } = useLocation();
@@ -122,6 +123,7 @@ function Layout({ children, hideNavFooter = false }: { children: React.ReactNode
       )}
 
       {!hideNavFooter && <ChatbotContainer />}
+      {!hideNavFooter && <CookieConsent />}
     </div>
   );
 }

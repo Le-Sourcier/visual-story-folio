@@ -1,4 +1,5 @@
 import { useState, useCallback } from 'react';
+import { hasConsented } from './useCookieConsent';
 
 // ======================== TYPES ========================
 
@@ -13,6 +14,7 @@ const STORAGE_KEY = 'visitor_session';
 
 function getStoredSession(): VisitorSession | null {
   try {
+    if (!hasConsented()) return null;
     const raw = sessionStorage.getItem(STORAGE_KEY);
     if (!raw) return null;
     const parsed = JSON.parse(raw);
@@ -24,6 +26,7 @@ function getStoredSession(): VisitorSession | null {
 }
 
 function storeSession(session: VisitorSession): void {
+  if (!hasConsented()) return;
   sessionStorage.setItem(STORAGE_KEY, JSON.stringify(session));
 }
 

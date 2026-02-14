@@ -4,6 +4,7 @@ import { Bot, Sparkles, X } from 'lucide-react';
 import { useChatbot } from './useChatbot';
 import { ChatWindow } from './ChatWindow';
 import { cn } from '../../../lib/utils';
+import { hasConsented } from '@/hooks/useCookieConsent';
 
 export const ChatbotContainer: React.FC = () => {
   // Preservation of the environment variable check as per the original code
@@ -18,7 +19,7 @@ export const ChatbotContainer: React.FC = () => {
     resetChat 
   } = useChatbot();
 
-  if (!isEnabled) return null;
+  if (!isEnabled || !hasConsented()) return null;
 
   return (
     <>
