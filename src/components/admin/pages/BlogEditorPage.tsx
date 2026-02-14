@@ -1,55 +1,13 @@
-import { useState, useRef, useCallback, useEffect } from 'react';
+import { useState } from 'react';
 import {
-  ArrowLeft, Save, Eye, EyeOff, Loader2, CheckCircle2,
-  Bold, Italic, Heading1, Heading2, Heading3, Code, CodeSquare,
-  Image, Link2, List, ListOrdered, Quote, Minus, Table,
-  Plus, Trash2, Send, FileText,
+  ArrowLeft, Save, Loader2, CheckCircle2,
+  Image, Plus, Trash2, Send,
 } from 'lucide-react';
 import { useCreateBlogPost, useUpdateBlogPost } from '@/hooks/queries';
-import { useUIStore } from '@/stores/uiStore';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
+import { MarkdownEditor } from '../shared/MarkdownEditor';
 import type { BlogPost, BlogPostFormData } from '@/types/admin.types';
-
-// ======================== MARKDOWN TOOLBAR ========================
-
-interface ToolbarAction {
-  icon: React.ElementType;
-  label: string;
-  action: (insert: InsertFn) => void;
-  separator?: boolean;
-}
-
-type InsertFn = (before: string, after?: string, placeholder?: string) => void;
-
-const toolbarActions: ToolbarAction[] = [
-  { icon: Bold, label: 'Gras (Ctrl+B)', action: (ins) => ins('**', '**', 'texte en gras') },
-  { icon: Italic, label: 'Italique (Ctrl+I)', action: (ins) => ins('*', '*', 'texte en italique') },
-  { icon: Heading1, label: 'Titre 1', action: (ins) => ins('\n# ', '', 'Titre') },
-  { icon: Heading2, label: 'Titre 2', action: (ins) => ins('\n## ', '', 'Sous-titre') },
-  { icon: Heading3, label: 'Titre 3', action: (ins) => ins('\n### ', '', 'Section') },
-  { icon: Quote, label: 'Citation', action: (ins) => ins('\n> ', '', 'Citation...'), separator: true },
-  { icon: Code, label: 'Code inline `code`', action: (ins) => ins('`', '`', 'code') },
-  {
-    icon: CodeSquare, label: 'Bloc de code ```', action: (ins) => ins(
-      '\n\n```javascript\n', '\n```\n\n', '// Votre code ici\nconsole.log("Hello World");'
-    ),
-  },
-  { icon: Image, label: 'Image', action: (ins) => ins('\n![', '](https://url-de-image.com)\n', 'description'), separator: true },
-  { icon: Link2, label: 'Lien', action: (ins) => ins('[', '](https://)', 'texte du lien') },
-  { icon: List, label: 'Liste', action: (ins) => ins('\n- ', '', 'Element') },
-  { icon: ListOrdered, label: 'Liste numerotee', action: (ins) => ins('\n1. ', '', 'Element') },
-  { icon: Minus, label: 'Separateur', action: (ins) => ins('\n\n---\n\n', '', ''), separator: true },
-  {
-    icon: Table, label: 'Tableau', action: (ins) => ins(
-      '\n\n| Colonne 1 | Colonne 2 | Colonne 3 |\n|-----------|-----------|----------|\n| ', ' | | |\n\n', 'donnee'
-    ),
-  },
-];
-
-// ======================== MARKDOWN PREVIEW ========================
-// Uses shared MarkdownRenderer component
-import { MarkdownRenderer } from '@/components/shared/MarkdownRenderer';
 
 // ======================== BLOG CATEGORIES ========================
 const blogCategories = ['Tech', 'Design', 'Business', 'Tutoriel', 'Actualite', 'Retour d\'experience'];
@@ -65,8 +23,6 @@ export function BlogEditorPage({ initialData, onBack }: BlogEditorPageProps) {
   const isEditing = !!initialData;
   const createMutation = useCreateBlogPost();
   const updateMutation = useUpdateBlogPost();
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
-  const [showPreview, setShowPreview] = useState(false);
   const [saved, setSaved] = useState(false);
 
   const [formData, setFormData] = useState<BlogPostFormData>(() => {
@@ -91,59 +47,6 @@ export function BlogEditorPage({ initialData, onBack }: BlogEditorPageProps) {
       published: false,
     };
   });
-
-  // Insert markdown at cursor
-  const insertMarkdown: InsertFn = useCallback((before, after = '', placeholder = '') => {
-    const ta = textareaRef.current;
-    if (!ta) return;
-
-    const start = ta.selectionStart;
-    const end = ta.selectionEnd;
-    const selectedText = ta.value.substring(start, end);
-    const textToInsert = selectedText || placeholder;
-    const newValue = ta.value.substring(0, start) + before + textToInsert + after + ta.value.substring(end);
-
-    setFormData((prev) => ({ ...prev, content: newValue }));
-
-    // Restore cursor position
-    requestAnimationFrame(() => {
-      ta.focus();
-      const cursorPos = start + before.length + textToInsert.length;
-      ta.setSelectionRange(
-        selectedText ? cursorPos + after.length : start + before.length,
-        selectedText ? cursorPos + after.length : start + before.length + textToInsert.length
-      );
-    });
-  }, []);
-
-  // Keyboard shortcuts
-  const handleEditorKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.ctrlKey || e.metaKey) {
-      switch (e.key) {
-        case 'b':
-          e.preventDefault();
-          insertMarkdown('**', '**', 'texte en gras');
-          break;
-        case 'i':
-          e.preventDefault();
-          insertMarkdown('*', '*', 'texte en italique');
-          break;
-        case 'k':
-          e.preventDefault();
-          insertMarkdown('[', '](https://)', 'texte du lien');
-          break;
-        case 's':
-          e.preventDefault();
-          handleSave(false);
-          break;
-      }
-    }
-    // Tab indent in code
-    if (e.key === 'Tab') {
-      e.preventDefault();
-      insertMarkdown('  ', '', '');
-    }
-  };
 
   const handleChange = (field: string, value: string | boolean) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
@@ -227,19 +130,6 @@ export function BlogEditorPage({ initialData, onBack }: BlogEditorPageProps) {
         </div>
 
         <div className="flex items-center gap-2">
-          <button
-            onClick={() => setShowPreview(!showPreview)}
-            className={cn(
-              'h-8 px-3 rounded-lg text-[11px] font-medium flex items-center gap-1.5 border transition-colors',
-              showPreview
-                ? 'bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 border-transparent'
-                : 'border-zinc-200 dark:border-zinc-800 text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300'
-            )}
-          >
-            {showPreview ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
-            {showPreview ? 'Editeur' : 'Apercu'}
-          </button>
-
           <button
             onClick={() => handleSave(false)}
             disabled={isPending}
@@ -329,80 +219,13 @@ export function BlogEditorPage({ initialData, onBack }: BlogEditorPageProps) {
           </div>
 
           {/* Content editor */}
-          <div className="bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200/60 dark:border-zinc-800 overflow-hidden">
-            {/* Toolbar */}
-            <div className="flex items-center gap-0.5 px-3 py-2 border-b border-zinc-100 dark:border-zinc-800 overflow-x-auto">
-              {toolbarActions.map((action, i) => {
-                const isCodeInline = action.label.includes('inline');
-                const isCodeBlock = action.label.includes('```');
-
-                return (
-                  <div key={i} className="flex items-center">
-                    {action.separator && i > 0 && (
-                      <div className="w-px h-5 bg-zinc-200 dark:bg-zinc-800 mx-1" />
-                    )}
-                    <button
-                      onClick={() => action.action(insertMarkdown)}
-                      title={action.label}
-                      className={`flex items-center gap-1 rounded-md text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors ${
-                        isCodeInline || isCodeBlock ? 'px-2 py-1' : 'p-1.5'
-                      }`}
-                    >
-                      <action.icon className="w-4 h-4" />
-                      {isCodeInline && <span className="text-[10px] font-mono">{"`"}</span>}
-                      {isCodeBlock && <span className="text-[10px] font-mono">{"```"}</span>}
-                    </button>
-                  </div>
-                );
-              })}
-            </div>
-
-            {/* Editor / Preview */}
-            {showPreview ? (
-              <div className="p-6 min-h-[400px]">
-                <MarkdownRenderer content={formData.content} />
-              </div>
-            ) : (
-              <textarea
-                ref={textareaRef}
-                value={formData.content}
-                onChange={(e) => handleChange('content', e.target.value)}
-                onKeyDown={handleEditorKeyDown}
-                placeholder="Ecrivez votre article en Markdown...
-
-# Titre principal
-
-Du texte avec du **gras** et de l'*italique*.
-
-```javascript
-const hello = 'world';
-console.log(hello);
-```
-
-> Une citation inspirante
-
-![Description](https://url-image.com/photo.jpg)"
-                className="w-full min-h-[400px] p-6 bg-transparent text-sm font-mono text-zinc-800 dark:text-zinc-200 resize-y outline-none placeholder:text-zinc-300 dark:placeholder:text-zinc-700 leading-relaxed"
-              />
-            )}
-
-            {/* Bottom bar */}
-            <div className="flex items-center justify-between px-4 py-2 border-t border-zinc-100 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-900">
-              <div className="flex items-center gap-4 text-[10px] text-zinc-400">
-                <span>{wordCount} mots</span>
-                <span>~{readTime} min</span>
-                <span>Markdown</span>
-              </div>
-              <div className="flex items-center gap-2 text-[10px] text-zinc-400">
-                <kbd className="font-mono border border-zinc-200 dark:border-zinc-700 rounded px-1 py-0.5">Ctrl+B</kbd>
-                <span>Gras</span>
-                <kbd className="font-mono border border-zinc-200 dark:border-zinc-700 rounded px-1 py-0.5">Ctrl+I</kbd>
-                <span>Italique</span>
-                <kbd className="font-mono border border-zinc-200 dark:border-zinc-700 rounded px-1 py-0.5">Ctrl+S</kbd>
-                <span>Sauver</span>
-              </div>
-            </div>
-          </div>
+          <MarkdownEditor
+            label="Contenu de l'article"
+            value={formData.content}
+            onChange={(v) => handleChange('content', v)}
+            placeholder="Ecrivez votre article en Markdown..."
+            minHeight="400px"
+          />
         </div>
 
         {/* Right: Metadata sidebar */}

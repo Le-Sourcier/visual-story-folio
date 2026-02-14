@@ -6,3 +6,4 @@ export { AdminModal } from './AdminModal';
 export { EmptyState } from './EmptyState';
 export { StatusBadge } from './StatusBadge';
 export { CommandPalette } from './CommandPalette';
+export { MarkdownEditor } from './MarkdownEditor';
