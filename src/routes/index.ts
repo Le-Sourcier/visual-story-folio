@@ -8,6 +8,7 @@ import appointmentRoutes from './appointment.routes.js';
 import newsletterRoutes from './newsletter.routes.js';
 import testimonialRoutes from './testimonial.routes.js';
 import chatbotRoutes from './chatbot.routes.js';
+import settingsRoutes from './settings.routes.js';
 
 const router = Router();
 
@@ -21,6 +22,7 @@ router.use('/appointments', appointmentRoutes);
 router.use('/newsletter', newsletterRoutes);
 router.use('/testimonials', testimonialRoutes);
 router.use('/chatbot', chatbotRoutes);
+router.use('/settings', settingsRoutes);
 
 // Health check
 router.get('/health', (_req, res) => {

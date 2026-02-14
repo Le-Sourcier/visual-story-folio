@@ -7,6 +7,7 @@ import Contact from './Contact.js';
 import Appointment from './Appointment.js';
 import Newsletter from './Newsletter.js';
 import Testimonial from './Testimonial.js';
+import Settings from './Settings.js';
 
 // Export all models
 export {
@@ -20,6 +21,7 @@ export {
   Appointment,
   Newsletter,
   Testimonial,
+  Settings,
 };
 
 // Export db object for convenience
@@ -34,6 +36,7 @@ const db = {
   Appointment,
   Newsletter,
   Testimonial,
+  Settings,
 };
 
 export default db;
