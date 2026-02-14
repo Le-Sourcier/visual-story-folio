@@ -21,3 +21,6 @@ export * from './useNewsletterQueries';
 
 // Testimonials
 export * from './useTestimonialQueries';
+
+// Settings
+export * from './useSettingsQueries';

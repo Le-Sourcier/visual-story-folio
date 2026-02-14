@@ -6,6 +6,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { useAuthStore } from '@/stores/authStore';
 import { useSettingsStore, applyTheme, type ThemeMode, type ProfileData, type SocialLinks, type SeoData } from '@/stores/settingsStore';
 import { useUIStore } from '@/stores/uiStore';
+import { useUpdateSettings } from '@/hooks/queries';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 
@@ -124,6 +125,9 @@ export function SettingsPage() {
   const [seoForm, setSeoForm] = useState<SeoData>({ ...settings.seo });
   const seoSave = useSaveFeedback();
 
+  // --- API sync ---
+  const updateSettingsMutation = useUpdateSettings();
+
   // Apply theme on change
   useEffect(() => {
     applyTheme(selectedTheme);
@@ -149,11 +153,17 @@ export function SettingsPage() {
 
   // --- Handlers ---
   const handleSaveProfile = () => {
-    profileSave.trigger(() => settings.updateProfile(profileForm));
+    profileSave.trigger(() => {
+      settings.updateProfile(profileForm);
+      updateSettingsMutation.mutate({ profile: profileForm });
+    });
   };
 
   const handleSaveSocial = () => {
-    socialSave.trigger(() => settings.updateSocialLinks(socialForm));
+    socialSave.trigger(() => {
+      settings.updateSocialLinks(socialForm);
+      updateSettingsMutation.mutate({ socialLinks: socialForm });
+    });
   };
 
   const handlePasswordChange = () => {
@@ -177,7 +187,10 @@ export function SettingsPage() {
   };
 
   const handleSaveSeo = () => {
-    seoSave.trigger(() => settings.updateSeo(seoForm));
+    seoSave.trigger(() => {
+      settings.updateSeo(seoForm);
+      updateSettingsMutation.mutate({ seo: seoForm });
+    });
   };
 
   const handleToggleDisplay = (key: keyof typeof displayPrefs) => {

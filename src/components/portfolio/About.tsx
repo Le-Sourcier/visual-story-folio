@@ -4,12 +4,14 @@ import { Download, ExternalLink, Award as AwardIcon, CheckCircle2, Code2, Zap, C
 import { useNavigate } from 'react-router-dom';
 import { cvData, Experience } from '../../data/cvData';
 import { api } from '@/services/api';
+import { useProfile } from '@/hooks/useProfile';
 
 export function About() {
   const navigate = useNavigate();
+  const profile = useProfile();
   const [experiences, setExperiences] = useState<Experience[]>([]);
   const [loading, setLoading] = useState(true);
-  const profileImage = 'https://storage.googleapis.com/dala-prod-public-storage/generated-images/564508a5-e18e-4304-b909-f59e34b774ee/profile-picture-4826774e-1770728429712.webp';
+  const profileImage = profile.avatar || 'https://storage.googleapis.com/dala-prod-public-storage/generated-images/564508a5-e18e-4304-b909-f59e34b774ee/profile-picture-4826774e-1770728429712.webp';
 
   useEffect(() => {
     const fetchExp = async () => {
@@ -26,9 +28,9 @@ export function About() {
   }, []);
 
   const handleDownloadResume = () => {
-    const { personalInformation, skills, education } = cvData;
-    
-    let content = `CV ${personalInformation.name} - ${personalInformation.title}
+    const { skills, education } = cvData;
+
+    let content = `CV ${profile.name} - ${profile.title}
 
 `;
     content += `EXPÉRIENCE
@@ -60,7 +62,7 @@ FORMATION
     const url = window.URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.setAttribute('download', `CV_${personalInformation.name.replace(/\s+/g, '_')}.txt`);
+    link.setAttribute('download', `CV_${profile.name.replace(/\s+/g, '_')}.txt`);
     document.body.appendChild(link);
     link.click();
     link.remove();
@@ -81,7 +83,7 @@ FORMATION
     ...cvData.skills.tools.slice(0, 1)
   ].map(name => ({ name, icon: getSkillIcon(name) }));
 
-  const [firstName, ...lastNameParts] = cvData.personalInformation.name.split(' ');
+  const [firstName, ...lastNameParts] = profile.name.split(' ');
   const lastName = lastNameParts.join(' ');
 
   const handleExperienceClick = (id: string) => {
@@ -103,7 +105,7 @@ FORMATION
             <div className="relative aspect-[4/5] rounded-[4rem] overflow-hidden group border border-white/5 shadow-2xl">
               <img 
                 src={profileImage} 
-                alt={cvData.personalInformation.name} 
+                alt={profile.name}
                 className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-110"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-background/80 via-transparent to-transparent opacity-60" />

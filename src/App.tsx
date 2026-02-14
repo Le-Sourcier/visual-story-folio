@@ -26,6 +26,8 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ThemeTransition } from './components/portfolio/ThemeTransition';
 import { ChatbotContainer } from './components/portfolio/chatbot/ChatbotContainer';
 import { cvData } from './data/cvData';
+import { useProfile } from './hooks/useProfile';
+import { SeoHead } from './components/shared/SeoHead';
 
 function ScrollToHash() {
   const { hash, pathname } = useLocation();
@@ -65,16 +67,17 @@ function HomePage() {
 }
 
 function Layout({ children, hideNavFooter = false }: { children: React.ReactNode; hideNavFooter?: boolean }) {
-  const { personalInformation } = cvData;
-  const [firstName] = personalInformation.name.split(' ');
+  const profile = useProfile();
+  const [firstName] = profile.name.split(' ');
 
   return (
     <div className="min-h-screen bg-background text-foreground selection:bg-primary selection:text-primary-foreground font-sans antialiased transition-colors duration-500">
+      <SeoHead />
       <ThemeTransition />
       {!hideNavFooter && <Navbar />}
-      
+
       {children}
-      
+
       {!hideNavFooter && (
         <footer className="py-24 px-6 md:px-12 lg:px-24 bg-card border-t border-border transition-colors duration-500">
           <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-12">
@@ -83,33 +86,33 @@ function Layout({ children, hideNavFooter = false }: { children: React.ReactNode
                 {firstName.toUpperCase()}<span className="text-primary">.</span>
               </Link>
               <p className="text-muted-foreground font-medium text-center md:text-left">
-                Architecte logiciel & Développeur Fullstack<br /> basé à {personalInformation.location}.
+                {profile.title}<br /> base a {profile.location}.
               </p>
             </div>
-            
+
             <div className="flex flex-wrap justify-center gap-12 md:gap-24">
               <div className="flex flex-col gap-4">
                 <h4 className="text-xs font-black uppercase tracking-[0.3em] text-primary">Plan du site</h4>
                 <a href="/#work" className="font-bold hover:text-primary transition-colors">Projets</a>
-                <a href="/#about" className="font-bold hover:text-primary transition-colors">À Propos</a>
+                <a href="/#about" className="font-bold hover:text-primary transition-colors">A Propos</a>
                 <Link to="/blog" className="font-bold hover:text-primary transition-colors">Blog</Link>
                 <a href="/#contact" className="font-bold hover:text-primary transition-colors">Contact</a>
               </div>
               <div className="flex flex-col gap-4">
-                <h4 className="text-xs font-black uppercase tracking-[0.3em] text-primary">Réseaux</h4>
-                <a href={personalInformation.github} target="_blank" rel="noopener noreferrer" className="font-bold hover:text-primary transition-colors">GitHub</a>
-                <a href={personalInformation.linkedin} target="_blank" rel="noopener noreferrer" className="font-bold hover:text-primary transition-colors">LinkedIn</a>
-                <a href={`mailto:${personalInformation.email}`} className="font-bold hover:text-primary transition-colors">Email</a>
+                <h4 className="text-xs font-black uppercase tracking-[0.3em] text-primary">Reseaux</h4>
+                {profile.github && <a href={profile.github} target="_blank" rel="noopener noreferrer" className="font-bold hover:text-primary transition-colors">GitHub</a>}
+                {profile.linkedin && <a href={profile.linkedin} target="_blank" rel="noopener noreferrer" className="font-bold hover:text-primary transition-colors">LinkedIn</a>}
+                <a href={`mailto:${profile.email}`} className="font-bold hover:text-primary transition-colors">Email</a>
               </div>
             </div>
           </div>
-          
+
           <div className="max-w-7xl mx-auto mt-24 pt-12 border-t border-border flex flex-col md:flex-row justify-between items-center gap-6">
             <p className="text-muted-foreground text-sm font-medium italic">
-              &copy; {new Date().getFullYear()} {personalInformation.name}. Tous droits réservés.
+              &copy; {new Date().getFullYear()} {profile.name}. Tous droits reserves.
             </p>
             <div className="flex gap-8 text-sm font-bold uppercase tracking-widest text-muted-foreground/50">
-              <Link to="/politique-confidentialite" className="hover:text-primary transition-colors">Confidentialité</Link>
+              <Link to="/politique-confidentialite" className="hover:text-primary transition-colors">Confidentialite</Link>
               <Link to="/mentions-legales" className="hover:text-primary transition-colors">Mentions</Link>
               <Link to="/cgu" className="hover:text-primary transition-colors">CGU</Link>
               <Link to="/admin/login" className="hover:text-primary transition-colors">Admin</Link>

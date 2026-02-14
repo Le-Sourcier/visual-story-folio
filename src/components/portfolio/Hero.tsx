@@ -1,11 +1,11 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { ArrowDown, Github, Linkedin, Mail, PlayCircle, Twitter } from 'lucide-react';
-import { cvData } from '../../data/cvData';
+import { useProfile } from '@/hooks/useProfile';
 
 export function Hero() {
-  const { personalInformation } = cvData;
-  const [firstName] = personalInformation.name.split(' ');
+  const profile = useProfile();
+  const [firstName] = profile.name.split(' ');
 
   return (
     <section className="relative min-h-screen flex items-center justify-center pt-20 px-6 overflow-hidden">
@@ -71,7 +71,7 @@ export function Hero() {
             transition={{ delay: 0.4, duration: 0.8 }}
             className="text-lg md:text-2xl text-muted-foreground max-w-2xl mx-auto mb-16 font-medium leading-relaxed"
           >
-            Bonjour, je suis {firstName}. Je conçois des architectures logicielles robustes et des interfaces de haute qualité basées à {personalInformation.location}.
+            Bonjour, je suis {firstName}. Je conçois des architectures logicielles robustes et des interfaces de haute qualité basées à {profile.location}.
           </motion.p>
 
           <motion.div
@@ -98,9 +98,9 @@ export function Hero() {
             transition={{ delay: 1.2, duration: 1 }}
             className="flex items-center gap-12 text-muted-foreground/60"
           >
-            <motion.a href={personalInformation.github} target="_blank" rel="noopener noreferrer" whileHover={{ y: -5, color: 'var(--primary)' }} className="transition-all"><Github className="w-6 h-6" /></motion.a>
-            <motion.a href={personalInformation.linkedin} target="_blank" rel="noopener noreferrer" whileHover={{ y: -5, color: 'var(--primary)' }} className="transition-all"><Linkedin className="w-6 h-6" /></motion.a>
-            <motion.a href={`mailto:${personalInformation.email}`} whileHover={{ y: -5, color: 'var(--primary)' }} className="transition-all"><Mail className="w-6 h-6" /></motion.a>
+            <motion.a href={profile.github} target="_blank" rel="noopener noreferrer" whileHover={{ y: -5, color: 'var(--primary)' }} className="transition-all"><Github className="w-6 h-6" /></motion.a>
+            <motion.a href={profile.linkedin} target="_blank" rel="noopener noreferrer" whileHover={{ y: -5, color: 'var(--primary)' }} className="transition-all"><Linkedin className="w-6 h-6" /></motion.a>
+            <motion.a href={`mailto:${profile.email}`} whileHover={{ y: -5, color: 'var(--primary)' }} className="transition-all"><Mail className="w-6 h-6" /></motion.a>
             <motion.a href="#" whileHover={{ y: -5, color: 'var(--primary)' }} className="transition-all"><Twitter className="w-6 h-6" /></motion.a>
           </motion.div>
         </div>

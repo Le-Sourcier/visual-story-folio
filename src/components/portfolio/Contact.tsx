@@ -3,7 +3,7 @@ import { useForm } from 'react-hook-form';
 import { Send, Loader2 } from 'lucide-react';
 import { NewsletterForm } from './NewsletterForm';
 import { AppointmentBooking } from './AppointmentBooking';
-import { cvData } from '../../data/cvData';
+import { useProfile } from '@/hooks/useProfile';
 import { useSendContact } from '@/hooks/queries';
 
 interface ContactFormData {
@@ -15,7 +15,7 @@ interface ContactFormData {
 
 export function Contact() {
   const { register, handleSubmit, reset, formState: { errors } } = useForm<ContactFormData>();
-  const { personalInformation } = cvData;
+  const profile = useProfile();
   const sendMutation = useSendContact();
 
   const onSubmit = (data: ContactFormData) => {
@@ -64,15 +64,15 @@ export function Contact() {
               <div className="space-y-4">
                 <h4 className="text-[10px] font-black uppercase tracking-[0.3em] text-primary">Contact</h4>
                 <div className="space-y-2">
-                  <p className="font-bold text-lg">{personalInformation.email}</p>
-                  <p className="text-muted-foreground font-medium">{personalInformation.phone.split(' / ')[0]}</p>
+                  <p className="font-bold text-lg">{profile.email}</p>
+                  <p className="text-muted-foreground font-medium">{profile.phone.split(' / ')[0]}</p>
                 </div>
               </div>
 
               <div className="space-y-4">
                 <h4 className="text-[10px] font-black uppercase tracking-[0.3em] text-primary">Localisation</h4>
                 <div className="space-y-2">
-                  <p className="font-bold text-lg">{personalInformation.location}</p>
+                  <p className="font-bold text-lg">{profile.location}</p>
                   <p className="text-muted-foreground font-medium">Disponible pour missions remote</p>
                 </div>
               </div>

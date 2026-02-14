@@ -7,6 +7,7 @@ export { contactsApi } from './contacts.api';
 export { appointmentsApi } from './appointments.api';
 export { newsletterApi } from './newsletter.api';
 export { testimonialsApi } from './testimonials.api';
+export { settingsApi } from './settings.api';
 
 // Re-export apiClient methods + module APIs for backward compatibility
 import { apiClient } from './client';
