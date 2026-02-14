@@ -1,5 +1,6 @@
 export { DashboardPage } from './DashboardPage';
 export { ProjectsPage } from './ProjectsPage';
+export { ProjectEditorPage } from './ProjectEditorPage';
 export { ExperiencesPage } from './ExperiencesPage';
 export { ExperienceEditorPage } from './ExperienceEditorPage';
 export { BlogPage } from './BlogPage';

@@ -1,21 +1,16 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { motion, useScroll, useTransform } from 'framer-motion';
 import {
-  ArrowLeft,
-  Calendar,
-  MapPin,
-  Building2,
-  ExternalLink,
-  Cpu,
-  Trophy,
-  AlertCircle,
-  ChevronRight,
+  ArrowLeft, Calendar, MapPin, Building2, ExternalLink,
+  Cpu, Trophy, AlertCircle, ChevronRight, Share2,
+  ArrowUp, Mail, Layers, Clock,
 } from 'lucide-react';
 import { cvData } from '../../data/cvData';
 import { Badge } from '../ui/badge';
 import { MarkdownRenderer } from '../shared/MarkdownRenderer';
 import { useExperience } from '@/hooks/queries';
+import { toast } from 'sonner';
 import type { Experience } from '@/types/admin.types';
 
 // ======================== COMPONENT ========================
@@ -24,26 +19,24 @@ export function ExperienceDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { scrollY } = useScroll();
+  const [showBackToTop, setShowBackToTop] = useState(false);
 
-  // API query
   const { data: apiExperience, isLoading } = useExperience(id || '');
-
-  // Fallback to mock data
   const mockExperience = cvData.experience.find(exp => exp.id === id);
-
-  // Resolve (API first, mock fallback)
   const experience = (apiExperience as Experience | undefined) || (mockExperience as unknown as Experience) || null;
   const loading = isLoading && !mockExperience;
 
-  useEffect(() => {
-    window.scrollTo(0, 0);
-  }, [id]);
+  useEffect(() => { window.scrollTo(0, 0); }, [id]);
 
   useEffect(() => {
-    if (!loading && !experience) {
-      navigate('/404');
-    }
+    if (!loading && !experience) navigate('/404');
   }, [loading, experience, navigate]);
+
+  // Show back-to-top button after scroll
+  useEffect(() => {
+    const unsubscribe = scrollY.on('change', (v) => setShowBackToTop(v > 600));
+    return unsubscribe;
+  }, [scrollY]);
 
   const opacity = useTransform(scrollY, [0, 200], [1, 0]);
   const scale = useTransform(scrollY, [0, 200], [1, 1.1]);
@@ -58,32 +51,37 @@ export function ExperienceDetailPage() {
 
   if (!experience) return null;
 
+  // Build table of contents from available sections
+  const tocItems: { id: string; label: string }[] = [];
+  if (experience.description) tocItems.push({ id: 'contexte', label: 'Contexte' });
+  if (experience.details?.length) tocItems.push({ id: 'responsabilites', label: 'Responsabilites' });
+  if (experience.stack?.length) tocItems.push({ id: 'stack', label: 'Stack Technique' });
+  if (experience.challenges?.length) tocItems.push({ id: 'defis', label: 'Defis & Solutions' });
+
   const defaultCover = 'https://images.unsplash.com/photo-1517694712202-14dd9538aa97?q=80&w=2070';
+
+  const handleShare = () => {
+    navigator.clipboard.writeText(window.location.href);
+    toast.success('Lien copie dans le presse-papier');
+  };
+
+  const scrollToSection = (sectionId: string) => {
+    document.getElementById(sectionId)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
 
   return (
     <div className="min-h-screen bg-background">
       {/* ======================== HERO ======================== */}
       <section className="relative h-[70vh] w-full overflow-hidden">
         <motion.div style={{ opacity, scale }} className="absolute inset-0">
-          <img
-            src={experience.coverImage || defaultCover}
-            alt={experience.company}
-            className="w-full h-full object-cover"
-          />
+          <img src={experience.coverImage || defaultCover} alt={experience.company} className="w-full h-full object-cover" />
           <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-background/20 to-background" />
         </motion.div>
 
         <div className="absolute inset-0 flex flex-col justify-end px-6 md:px-12 lg:px-24 pb-12">
           <div className="max-w-7xl mx-auto w-full">
-            <motion.div
-              initial={{ opacity: 0, y: 30 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8 }}
-            >
-              <Link
-                to="/#about"
-                className="inline-flex items-center gap-2 text-white/80 hover:text-white mb-8 transition-colors group"
-              >
+            <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8 }}>
+              <Link to="/#about" className="inline-flex items-center gap-2 text-white/80 hover:text-white mb-8 transition-colors group">
                 <ArrowLeft className="w-5 h-5 group-hover:-translate-x-1 transition-transform" />
                 Retour au profil
               </Link>
@@ -131,9 +129,9 @@ export function ExperienceDetailPage() {
 
               {/* Description */}
               {experience.description && (
-                <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}>
+                <motion.div id="contexte" initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}>
                   <SectionHeader label="Contexte" />
-                  <div className="text-2xl md:text-3xl font-medium leading-relaxed text-muted-foreground">
+                  <div className="text-lg md:text-xl font-medium leading-relaxed text-muted-foreground">
                     <MarkdownRenderer content={experience.description} />
                   </div>
                 </motion.div>
@@ -141,7 +139,7 @@ export function ExperienceDetailPage() {
 
               {/* Details */}
               {experience.details && experience.details.length > 0 && (
-                <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}>
+                <motion.div id="responsabilites" initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}>
                   <SectionHeader label="Responsabilites" />
                   <div className="grid gap-6">
                     {experience.details.map((detail, idx) => (
@@ -156,7 +154,7 @@ export function ExperienceDetailPage() {
 
               {/* Stack */}
               {experience.stack && experience.stack.length > 0 && (
-                <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}>
+                <motion.div id="stack" initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}>
                   <SectionHeader label="Stack Technique" />
                   <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-6">
                     {experience.stack.map((tech, idx) => (
@@ -173,7 +171,7 @@ export function ExperienceDetailPage() {
 
               {/* Challenges */}
               {experience.challenges && experience.challenges.length > 0 && (
-                <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}>
+                <motion.div id="defis" initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}>
                   <SectionHeader label="Defis & Solutions" />
                   <div className="space-y-8">
                     {experience.challenges.map((challenge, idx) => (
@@ -187,27 +185,110 @@ export function ExperienceDetailPage() {
                   </div>
                 </motion.div>
               )}
+
+              {/* Illustrative images */}
+              {experience.illustrativeImages && experience.illustrativeImages.length > 0 && (
+                <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}>
+                  <SectionHeader label="Galerie" />
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    {experience.illustrativeImages.map((img, idx) => (
+                      <div key={idx} className="rounded-2xl overflow-hidden border border-border shadow-lg">
+                        <img src={img} alt={`Illustration ${idx + 1}`} className="w-full h-64 object-cover" />
+                      </div>
+                    ))}
+                  </div>
+                </motion.div>
+              )}
             </div>
 
-            {/* Sidebar */}
-            <div className="lg:col-span-4 space-y-12">
-              <motion.div initial={{ opacity: 0, x: 20 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }} className="sticky top-32 space-y-12">
+            {/* ======================== SIDEBAR ======================== */}
+            <div className="lg:col-span-4 space-y-8">
+              <motion.div initial={{ opacity: 0, x: 20 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }} className="sticky top-32 space-y-8">
+
+                {/* Table of contents */}
+                {tocItems.length > 1 && (
+                  <div className="p-6 rounded-[2rem] bg-card border border-border shadow-sm">
+                    <div className="flex items-center gap-3 mb-6">
+                      <Layers className="w-5 h-5 text-primary" />
+                      <h3 className="text-sm font-black uppercase tracking-tight">Sommaire</h3>
+                    </div>
+                    <nav className="space-y-1">
+                      {tocItems.map((item) => (
+                        <button
+                          key={item.id}
+                          onClick={() => scrollToSection(item.id)}
+                          className="w-full text-left flex items-center gap-3 px-3 py-2 rounded-xl text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-secondary/50 transition-all group"
+                        >
+                          <div className="w-1.5 h-1.5 rounded-full bg-primary/40 group-hover:bg-primary transition-colors" />
+                          {item.label}
+                        </button>
+                      ))}
+                    </nav>
+                  </div>
+                )}
+
+                {/* Quick info card */}
+                <div className="p-6 rounded-[2rem] bg-secondary/20 border border-border">
+                  <h3 className="text-sm font-black uppercase tracking-tight mb-6">Infos rapides</h3>
+                  <div className="space-y-4">
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
+                        <Building2 className="w-4 h-4 text-primary" />
+                      </div>
+                      <div>
+                        <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Entreprise</p>
+                        <p className="text-sm font-bold">{experience.company}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
+                        <Clock className="w-4 h-4 text-primary" />
+                      </div>
+                      <div>
+                        <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Periode</p>
+                        <p className="text-sm font-bold">{experience.dates}</p>
+                      </div>
+                    </div>
+                    {experience.location && (
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
+                          <MapPin className="w-4 h-4 text-primary" />
+                        </div>
+                        <div>
+                          <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Lieu</p>
+                          <p className="text-sm font-bold">{experience.location}</p>
+                        </div>
+                      </div>
+                    )}
+                    {experience.stack && (
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
+                          <Cpu className="w-4 h-4 text-primary" />
+                        </div>
+                        <div>
+                          <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Technologies</p>
+                          <p className="text-sm font-bold">{experience.stack.length} outils</p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
 
                 {/* Achievements */}
                 {experience.achievements && experience.achievements.length > 0 && (
-                  <div className="p-10 rounded-[2.5rem] bg-card border border-border shadow-sm">
-                    <div className="flex items-center gap-3 mb-10">
-                      <Trophy className="w-6 h-6 text-primary" />
-                      <h3 className="text-xl font-black uppercase tracking-tight">Realisations</h3>
+                  <div className="p-6 rounded-[2rem] bg-card border border-border shadow-sm">
+                    <div className="flex items-center gap-3 mb-6">
+                      <Trophy className="w-5 h-5 text-primary" />
+                      <h3 className="text-sm font-black uppercase tracking-tight">Realisations</h3>
                     </div>
-                    <div className="space-y-8">
+                    <div className="space-y-6">
                       {experience.achievements.map((ach, idx) => (
                         <div key={idx} className="group">
-                          <div className="flex items-start gap-4 mb-2">
-                            <div className="w-2 h-2 rounded-full bg-primary mt-2" />
-                            <h4 className="font-black text-sm uppercase tracking-wider">{ach.title}</h4>
+                          <div className="flex items-start gap-3 mb-1">
+                            <div className="w-2 h-2 rounded-full bg-primary mt-2 shrink-0" />
+                            <h4 className="font-black text-xs uppercase tracking-wider">{ach.title}</h4>
                           </div>
-                          <p className="text-sm text-muted-foreground pl-6 font-medium leading-relaxed">{ach.description}</p>
+                          <p className="text-xs text-muted-foreground pl-5 font-medium leading-relaxed">{ach.description}</p>
                         </div>
                       ))}
                     </div>
@@ -216,29 +297,60 @@ export function ExperienceDetailPage() {
 
                 {/* Links */}
                 {experience.links && experience.links.length > 0 && (
-                  <div className="p-10 rounded-[2.5rem] bg-secondary/30 border border-border">
-                    <h3 className="text-lg font-black uppercase tracking-tight mb-8">Liens utiles</h3>
-                    <div className="space-y-4">
+                  <div className="p-6 rounded-[2rem] bg-secondary/30 border border-border">
+                    <h3 className="text-sm font-black uppercase tracking-tight mb-6">Liens utiles</h3>
+                    <div className="space-y-3">
                       {experience.links.map((link, idx) => (
                         <a
                           key={idx}
                           href={link.url}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="flex items-center justify-between p-4 rounded-xl bg-background border border-border hover:border-primary/50 transition-all group"
+                          className="flex items-center justify-between p-3 rounded-xl bg-background border border-border hover:border-primary/50 transition-all group"
                         >
-                          <span className="font-bold text-sm uppercase tracking-tight">{link.label}</span>
+                          <span className="font-bold text-xs uppercase tracking-tight">{link.label}</span>
                           <ExternalLink className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors" />
                         </a>
                       ))}
                     </div>
                   </div>
                 )}
+
+                {/* Actions */}
+                <div className="flex gap-3">
+                  <button
+                    onClick={handleShare}
+                    className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl border border-border hover:bg-secondary/50 transition-colors text-sm font-bold"
+                  >
+                    <Share2 className="w-4 h-4" />
+                    Partager
+                  </button>
+                  <Link
+                    to="/#contact"
+                    className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl bg-primary text-primary-foreground hover:bg-primary/90 transition-colors text-sm font-bold"
+                  >
+                    <Mail className="w-4 h-4" />
+                    Contact
+                  </Link>
+                </div>
               </motion.div>
             </div>
           </div>
         </div>
       </section>
+
+      {/* Back to top */}
+      {showBackToTop && (
+        <motion.button
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: 20 }}
+          onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+          className="fixed bottom-8 right-8 w-12 h-12 rounded-full bg-primary text-primary-foreground shadow-lg hover:shadow-xl hover:shadow-primary/20 flex items-center justify-center transition-all z-50"
+        >
+          <ArrowUp className="w-5 h-5" />
+        </motion.button>
+      )}
     </div>
   );
 }

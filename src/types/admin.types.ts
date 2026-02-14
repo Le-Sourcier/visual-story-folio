@@ -115,6 +115,7 @@ export interface Project {
   results: string[];
   metrics: ProjectMetric[];
   chartData: ChartDataPoint[];
+  technologies?: string[];
   url?: string;
   solutionDiagram?: SolutionDiagram;
   impactGraph?: ImpactData[];
