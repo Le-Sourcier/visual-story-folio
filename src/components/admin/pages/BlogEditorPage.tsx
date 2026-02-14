@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import {
   ArrowLeft, Save, Loader2, CheckCircle2,
-  Image, Plus, Trash2, Send,
+  Image, Plus, Trash2, Send, Mail,
 } from 'lucide-react';
-import { useCreateBlogPost, useUpdateBlogPost } from '@/hooks/queries';
+import { useCreateBlogPost, useUpdateBlogPost, useSendArticleToSubscribers } from '@/hooks/queries';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { MarkdownEditor } from '../shared/MarkdownEditor';
@@ -23,6 +23,7 @@ export function BlogEditorPage({ initialData, onBack }: BlogEditorPageProps) {
   const isEditing = !!initialData;
   const createMutation = useCreateBlogPost();
   const updateMutation = useUpdateBlogPost();
+  const sendNewsletterMutation = useSendArticleToSubscribers();
   const [saved, setSaved] = useState(false);
 
   const [formData, setFormData] = useState<BlogPostFormData>(() => {
@@ -152,6 +153,27 @@ export function BlogEditorPage({ initialData, onBack }: BlogEditorPageProps) {
             <Send className="w-3.5 h-3.5" />
             Publier
           </button>
+
+          {/* Notify subscribers - only for published articles being edited */}
+          {isEditing && initialData?.published && initialData?.slug && (
+            <button
+              onClick={() => {
+                sendNewsletterMutation.mutate({
+                  title: formData.title,
+                  excerpt: formData.excerpt || formData.content.slice(0, 150),
+                  slug: initialData.slug,
+                  imageUrl: formData.imageUrl || undefined,
+                  category: formData.category,
+                  readTime: `${readTime} min`,
+                });
+              }}
+              disabled={sendNewsletterMutation.isPending}
+              className="h-8 px-3 rounded-lg border border-blue-300 dark:border-blue-700 text-blue-600 dark:text-blue-400 text-[11px] font-semibold flex items-center gap-1.5 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors disabled:opacity-60"
+            >
+              {sendNewsletterMutation.isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Mail className="w-3.5 h-3.5" />}
+              Notifier
+            </button>
+          )}
         </div>
       </div>
 

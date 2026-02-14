@@ -21,6 +21,17 @@ export const newsletterApi = {
   async getStats(): Promise<{ total: number; active: number }> {
     return apiClient.get<{ total: number; active: number }>('/newsletter/stats');
   },
+
+  async sendArticle(data: {
+    title: string;
+    excerpt: string;
+    slug: string;
+    imageUrl?: string;
+    category: string;
+    readTime: string;
+  }): Promise<{ sent: number; failed: number }> {
+    return apiClient.post<{ sent: number; failed: number }>('/newsletter/send-article', data);
+  },
 };
 
 export default newsletterApi;

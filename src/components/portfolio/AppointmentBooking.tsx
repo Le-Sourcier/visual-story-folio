@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Calendar as CalendarIcon, Clock, ChevronRight, Check, MessageSquare, AlertCircle, User, Mail, ArrowLeft } from 'lucide-react';
+import { AnimatePresence, motion } from 'framer-motion';
+import { Calendar as CalendarIcon, Clock, ChevronRight, Check, MessageSquare, AlertCircle, User, Mail, ArrowLeft, Loader2 } from 'lucide-react';
 import { Calendar } from '../ui/calendar';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
@@ -8,45 +8,66 @@ import { RadioGroup, RadioGroupItem } from '../ui/radio-group';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { toast } from 'sonner';
+import { useCreateAppointment } from '@/hooks/queries';
 
 export function AppointmentBooking() {
   const [date, setDate] = useState<Date | undefined>(new Date());
   const [step, setStep] = useState(1);
   const [selectedTime, setSelectedTime] = useState<string | null>(null);
-  const [sujet, setSujet] = useState("");
-  const [urgence, setUrgence] = useState("non-urgent");
-  const [nom, setNom] = useState("");
-  const [email, setEmail] = useState("");
+  const [sujet, setSujet] = useState('');
+  const [urgence, setUrgence] = useState<'non-urgent' | 'urgent'>('non-urgent');
+  const [nom, setNom] = useState('');
+  const [email, setEmail] = useState('');
 
-  const times = ["09:00", "10:00", "11:00", "14:00", "15:00", "16:00"];
+  const createMutation = useCreateAppointment();
+  const times = ['09:00', '10:00', '11:00', '14:00', '15:00', '16:00'];
 
   const handleNextToStep2 = () => {
     if (!nom || !email || !sujet) {
-      toast.error("Veuillez remplir tous les champs obligatoires (Nom, Email, Sujet).");
+      toast.error('Veuillez remplir tous les champs obligatoires (Nom, Email, Sujet).');
       return;
     }
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-      toast.error("Veuillez entrer une adresse email valide.");
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      toast.error('Veuillez entrer une adresse email valide.');
       return;
     }
     setStep(2);
   };
 
   const handleBook = () => {
-    if (!selectedTime) {
-      toast.error("Veuillez choisir un horaire.");
+    if (!selectedTime || !date) {
+      toast.error('Veuillez choisir un horaire.');
       return;
     }
-    console.log("Rendez-vous réservé:", { nom, email, sujet, urgence, date, selectedTime });
-    toast.success("Rendez-vous réservé avec succès !");
-    setStep(3);
+
+    createMutation.mutate(
+      {
+        name: nom.trim(),
+        email: email.trim(),
+        subject: sujet.trim(),
+        urgency: urgence,
+        date: format(date, 'yyyy-MM-dd'),
+        time: selectedTime,
+      },
+      {
+        onSuccess: () => setStep(3),
+      }
+    );
+  };
+
+  const resetForm = () => {
+    setStep(1);
+    setSelectedTime(null);
+    setSujet('');
+    setNom('');
+    setEmail('');
+    setUrgence('non-urgent');
   };
 
   return (
     <div id="booking" className="p-6 sm:p-8 md:p-12 rounded-[1.5rem] sm:rounded-[2.5rem] bg-card border border-border shadow-2xl overflow-hidden relative">
       <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 blur-[100px] -z-10" />
-      
+
       <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4 mb-8 sm:mb-12 text-center sm:text-left">
         <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-primary/10 flex items-center justify-center text-primary shrink-0">
           <CalendarIcon className="w-6 h-6 sm:w-7 sm:h-7" />
@@ -60,9 +81,9 @@ export function AppointmentBooking() {
       <div className="min-h-fit sm:min-h-[450px]">
         <AnimatePresence mode="wait">
           {step === 1 && (
-            <motion.div 
+            <motion.div
               key="step1"
-              initial={{ opacity: 0, y: 10 }} 
+              initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -10 }}
               className="space-y-8 sm:space-y-10"
@@ -83,13 +104,13 @@ export function AppointmentBooking() {
 
                 <div className="space-y-6">
                   <label className="text-[10px] font-black uppercase tracking-widest text-primary block text-center lg:text-left">2. Vos informations</label>
-                  
+
                   <div className="grid grid-cols-1 gap-4">
                     <div className="space-y-2">
                       <Label className="text-xs font-bold flex items-center gap-2">
                         <User className="w-3 h-3 text-primary" /> Nom complet
                       </Label>
-                      <Input 
+                      <Input
                         placeholder="Jean Dupont"
                         value={nom}
                         onChange={(e) => setNom(e.target.value)}
@@ -100,7 +121,7 @@ export function AppointmentBooking() {
                       <Label className="text-xs font-bold flex items-center gap-2">
                         <Mail className="w-3 h-3 text-primary" /> Email
                       </Label>
-                      <Input 
+                      <Input
                         type="email"
                         placeholder="jean@exemple.com"
                         value={email}
@@ -114,7 +135,7 @@ export function AppointmentBooking() {
                     <Label className="text-xs font-bold flex items-center gap-2">
                       <MessageSquare className="w-3 h-3 text-primary" /> Sujet de la demande
                     </Label>
-                    <Input 
+                    <Input
                       placeholder="Ex: Refonte site e-commerce..."
                       value={sujet}
                       onChange={(e) => setSujet(e.target.value)}
@@ -126,9 +147,9 @@ export function AppointmentBooking() {
                     <Label className="text-xs font-bold flex items-center gap-2">
                       <AlertCircle className="w-3 h-3 text-primary" /> Niveau d'urgence
                     </Label>
-                    <RadioGroup 
-                      value={urgence} 
-                      onValueChange={setUrgence}
+                    <RadioGroup
+                      value={urgence}
+                      onValueChange={(v) => setUrgence(v as 'non-urgent' | 'urgent')}
                       className="flex flex-col sm:flex-row gap-3"
                     >
                       <div className="flex items-center space-x-3 bg-background p-3 rounded-xl border border-border hover:border-primary/30 transition-colors flex-1 cursor-pointer">
@@ -137,14 +158,14 @@ export function AppointmentBooking() {
                       </div>
                       <div className="flex items-center space-x-3 bg-background p-3 rounded-xl border border-border hover:border-primary/30 transition-colors flex-1 cursor-pointer">
                         <RadioGroupItem value="urgent" id="r2" />
-                        <Label htmlFor="r2" className="font-bold cursor-pointer text-sm flex-1">Urgent 🔥</Label>
+                        <Label htmlFor="r2" className="font-bold cursor-pointer text-sm flex-1">Urgent</Label>
                       </div>
                     </RadioGroup>
                   </div>
                 </div>
               </div>
 
-              <button 
+              <button
                 onClick={handleNextToStep2}
                 className="w-full py-4 sm:py-5 bg-primary text-primary-foreground rounded-2xl font-black flex items-center justify-center gap-2 hover:shadow-xl hover:shadow-primary/20 transition-all uppercase tracking-widest text-sm"
               >
@@ -154,9 +175,9 @@ export function AppointmentBooking() {
           )}
 
           {step === 2 && (
-            <motion.div 
+            <motion.div
               key="step2"
-              initial={{ opacity: 0, x: 20 }} 
+              initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: -20 }}
               className="space-y-10"
@@ -169,9 +190,9 @@ export function AppointmentBooking() {
                       key={time}
                       onClick={() => setSelectedTime(time)}
                       className={`py-4 sm:py-5 rounded-xl sm:rounded-2xl font-bold transition-all border text-sm sm:text-base ${
-                        selectedTime === time 
-                          ? "bg-primary text-primary-foreground border-primary shadow-lg scale-[1.02]" 
-                          : "bg-background border-border hover:border-primary/50"
+                        selectedTime === time
+                          ? 'bg-primary text-primary-foreground border-primary shadow-lg scale-[1.02]'
+                          : 'bg-background border-border hover:border-primary/50'
                       }`}
                     >
                       {time}
@@ -180,27 +201,31 @@ export function AppointmentBooking() {
                 </div>
               </div>
               <div className="flex flex-col sm:flex-row gap-4">
-                <button 
+                <button
                   onClick={() => setStep(1)}
                   className="flex-1 py-4 sm:py-5 border border-border rounded-xl sm:rounded-2xl font-bold hover:bg-secondary transition-all text-sm uppercase tracking-widest flex items-center justify-center gap-2"
                 >
                   <ArrowLeft className="w-4 h-4" /> Retour
                 </button>
-                <button 
-                  disabled={!selectedTime}
+                <button
+                  disabled={!selectedTime || createMutation.isPending}
                   onClick={handleBook}
                   className="flex-[2] py-4 sm:py-5 bg-primary text-primary-foreground rounded-xl sm:rounded-2xl font-black flex items-center justify-center gap-2 hover:shadow-xl hover:shadow-primary/20 transition-all disabled:opacity-50 uppercase tracking-widest text-sm"
                 >
-                  Confirmer la réservation
+                  {createMutation.isPending ? (
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                  ) : (
+                    'Confirmer la reservation'
+                  )}
                 </button>
               </div>
             </motion.div>
           )}
 
           {step === 3 && (
-            <motion.div 
+            <motion.div
               key="step3"
-              initial={{ opacity: 0, scale: 0.9 }} 
+              initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
               className="text-center py-8 sm:py-16 space-y-6 sm:space-y-8"
             >
@@ -208,9 +233,9 @@ export function AppointmentBooking() {
                 <Check className="w-10 h-10 sm:w-12 sm:h-12" />
               </div>
               <div className="space-y-4">
-                <h4 className="text-2xl sm:text-3xl font-black tracking-tight px-4">C'est réservé, {nom} !</h4>
+                <h4 className="text-2xl sm:text-3xl font-black tracking-tight px-4">C'est reserve, {nom} !</h4>
                 <div className="bg-secondary/50 p-4 sm:p-6 rounded-2xl sm:rounded-3xl border border-border max-w-md mx-auto space-y-3">
-                  <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-widest">Récapitulatif</p>
+                  <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-widest">Recapitulatif</p>
                   <p className="text-foreground font-bold text-base sm:text-lg leading-tight px-2">
                     "{sujet}"
                   </p>
@@ -227,11 +252,11 @@ export function AppointmentBooking() {
                   </div>
                 </div>
                 <p className="text-muted-foreground font-medium text-sm px-4">
-                  Un email de confirmation vous a été envoyé.
+                  Un email de confirmation vous sera envoye.
                 </p>
               </div>
-              <button 
-                onClick={() => { setStep(1); setSelectedTime(null); setSujet(""); setNom(""); setEmail(""); }}
+              <button
+                onClick={resetForm}
                 className="px-6 sm:px-8 py-3 sm:py-4 bg-secondary text-foreground rounded-xl sm:rounded-2xl font-black uppercase text-[10px] tracking-widest hover:bg-secondary/80 transition-all"
               >
                 Prendre un autre RDV

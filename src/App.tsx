@@ -16,6 +16,7 @@ import { LegalMentions } from './components/portfolio/LegalMentions';
 import { PrivacyPolicy } from './components/portfolio/PrivacyPolicy';
 import { TermsOfService } from './components/portfolio/TermsOfService';
 import { NotFoundPage } from './components/portfolio/NotFoundPage';
+import { NewsletterUnsubscribe } from './components/portfolio/NewsletterUnsubscribe';
 import { AdminLogin } from './components/admin/AdminLogin';
 import { AdminLayout } from './components/admin/layout';
 import { ProtectedRoute } from './components/admin/ProtectedRoute';
@@ -153,6 +154,7 @@ function App() {
           <Route path="/mentions-legales" element={<Layout><LegalMentions /></Layout>} />
           <Route path="/politique-confidentialite" element={<Layout><PrivacyPolicy /></Layout>} />
           <Route path="/cgu" element={<Layout><TermsOfService /></Layout>} />
+          <Route path="/newsletter/unsubscribe" element={<Layout><NewsletterUnsubscribe /></Layout>} />
 
           {/* Admin Routes */}
           <Route path="/admin/login" element={<Layout hideNavFooter><AdminLogin /></Layout>} />

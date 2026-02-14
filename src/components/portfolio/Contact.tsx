@@ -1,22 +1,27 @@
-import React from 'react';
 import { motion } from 'framer-motion';
 import { useForm } from 'react-hook-form';
-import { toast } from 'sonner';
-import { Send } from 'lucide-react';
+import { Send, Loader2 } from 'lucide-react';
 import { NewsletterForm } from './NewsletterForm';
 import { AppointmentBooking } from './AppointmentBooking';
 import { cvData } from '../../data/cvData';
+import { useSendContact } from '@/hooks/queries';
+
+interface ContactFormData {
+  name: string;
+  email: string;
+  subject: string;
+  message: string;
+}
 
 export function Contact() {
-  const { register, handleSubmit, reset, formState: { isSubmitting } } = useForm();
+  const { register, handleSubmit, reset, formState: { errors } } = useForm<ContactFormData>();
   const { personalInformation } = cvData;
+  const sendMutation = useSendContact();
 
-  const onSubmit = async (data: any) => {
-    // Mock API call
-    await new Promise(resolve => setTimeout(resolve, 1500));
-    console.log(data);
-    toast.success("Message envoyé ! Je vous répondrai très bientôt.");
-    reset();
+  const onSubmit = (data: ContactFormData) => {
+    sendMutation.mutate(data, {
+      onSuccess: () => reset(),
+    });
   };
 
   return (
@@ -50,9 +55,9 @@ export function Contact() {
             >
               Parlons de votre <span className="text-primary italic">prochain projet</span>.
             </motion.h2>
-            
+
             <p className="text-xl text-muted-foreground mb-16 max-w-md font-medium leading-relaxed">
-              Que vous ayez une idée précise ou juste une intuition, je suis là pour vous aider à la concrétiser.
+              Que vous ayez une idee precise ou juste une intuition, je suis la pour vous aider a la concretiser.
             </p>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-12">
@@ -63,7 +68,7 @@ export function Contact() {
                   <p className="text-muted-foreground font-medium">{personalInformation.phone.split(' / ')[0]}</p>
                 </div>
               </div>
-              
+
               <div className="space-y-4">
                 <h4 className="text-[10px] font-black uppercase tracking-[0.3em] text-primary">Localisation</h4>
                 <div className="space-y-2">
@@ -85,19 +90,24 @@ export function Contact() {
                 <div className="space-y-3">
                   <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Nom Complet</label>
                   <input
-                    {...register('name', { required: true })}
+                    {...register('name', { required: 'Le nom est requis' })}
                     className="w-full bg-secondary/30 border-border rounded-2xl px-6 py-5 focus:ring-2 focus:ring-primary transition-all font-medium"
                     placeholder="Jean Dupont"
                   />
+                  {errors.name && <p className="text-xs text-red-500">{errors.name.message}</p>}
                 </div>
                 <div className="space-y-3">
                   <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Email</label>
                   <input
-                    {...register('email', { required: true })}
+                    {...register('email', {
+                      required: 'L\'email est requis',
+                      pattern: { value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/, message: 'Email invalide' }
+                    })}
                     type="email"
                     className="w-full bg-secondary/30 border-border rounded-2xl px-6 py-5 focus:ring-2 focus:ring-primary transition-all font-medium"
                     placeholder="jean@exemple.com"
                   />
+                  {errors.email && <p className="text-xs text-red-500">{errors.email.message}</p>}
                 </div>
               </div>
 
@@ -116,19 +126,20 @@ export function Contact() {
               <div className="space-y-3">
                 <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Votre Message</label>
                 <textarea
-                  {...register('message', { required: true })}
+                  {...register('message', { required: 'Le message est requis' })}
                   rows={5}
                   className="w-full bg-secondary/30 border-border rounded-2xl px-6 py-5 focus:ring-2 focus:ring-primary transition-all resize-none font-medium"
                   placeholder="Dites-m'en plus sur votre projet..."
                 />
+                {errors.message && <p className="text-xs text-red-500">{errors.message.message}</p>}
               </div>
 
               <button
-                disabled={isSubmitting}
+                disabled={sendMutation.isPending}
                 className="w-full py-6 bg-primary text-primary-foreground rounded-2xl font-black text-lg flex items-center justify-center gap-3 hover:shadow-2xl hover:shadow-primary/30 transition-all disabled:opacity-70 active:scale-[0.98]"
               >
-                {isSubmitting ? (
-                  <div className="w-6 h-6 border-3 border-white/30 border-t-white rounded-full animate-spin" />
+                {sendMutation.isPending ? (
+                  <Loader2 className="w-6 h-6 animate-spin" />
                 ) : (
                   <>
                     Envoyer le message

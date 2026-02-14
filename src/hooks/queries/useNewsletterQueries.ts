@@ -72,3 +72,23 @@ export function useUnsubscribe() {
     },
   });
 }
+
+// Send article to subscribers (admin)
+export function useSendArticleToSubscribers() {
+  return useMutation({
+    mutationFn: (data: {
+      title: string;
+      excerpt: string;
+      slug: string;
+      imageUrl?: string;
+      category: string;
+      readTime: string;
+    }) => newsletterApi.sendArticle(data),
+    onSuccess: (result) => {
+      toast.success(`Newsletter envoyee a ${result.sent} abonne${result.sent > 1 ? 's' : ''}`);
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || 'Erreur lors de l\'envoi');
+    },
+  });
+}
