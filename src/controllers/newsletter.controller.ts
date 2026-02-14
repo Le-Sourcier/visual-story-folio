@@ -47,4 +47,16 @@ export const getStats = async (_req: Request, res: Response, next: NextFunction)
   }
 };
 
-export default { subscribe, unsubscribe, getAllSubscribers, getActiveSubscribers, getStats };
+export const sendArticle = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    const { title, excerpt, slug, imageUrl, category, readTime } = req.body;
+    const result = await newsletterService.sendArticleToSubscribers({
+      title, excerpt, slug, imageUrl, category, readTime,
+    });
+    sendSuccess(res, result, `Newsletter envoyee: ${result.sent} succes, ${result.failed} echecs`);
+  } catch (error) {
+    next(error);
+  }
+};
+
+export default { subscribe, unsubscribe, getAllSubscribers, getActiveSubscribers, getStats, sendArticle };

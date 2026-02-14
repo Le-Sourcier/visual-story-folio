@@ -5,6 +5,7 @@ import {
   getAllSubscribers,
   getActiveSubscribers,
   getStats,
+  sendArticle,
 } from '../controllers/newsletter.controller.js';
 import { authMiddleware, adminMiddleware } from '../middlewares/auth.middleware.js';
 import { validate } from '../middlewares/validation.middleware.js';
@@ -105,5 +106,39 @@ router.get('/subscribers/active', authMiddleware, adminMiddleware, getActiveSubs
  *         description: Newsletter stats
  */
 router.get('/stats', authMiddleware, adminMiddleware, getStats);
+
+/**
+ * @swagger
+ * /api/newsletter/send-article:
+ *   post:
+ *     summary: Send article to all active subscribers (admin only)
+ *     tags: [Newsletter]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [title, excerpt, slug, category, readTime]
+ *             properties:
+ *               title:
+ *                 type: string
+ *               excerpt:
+ *                 type: string
+ *               slug:
+ *                 type: string
+ *               imageUrl:
+ *                 type: string
+ *               category:
+ *                 type: string
+ *               readTime:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Newsletter sent
+ */
+router.post('/send-article', authMiddleware, adminMiddleware, sendArticle);
 
 export default router;

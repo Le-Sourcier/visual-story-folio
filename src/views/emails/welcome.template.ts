@@ -2,9 +2,10 @@ import { baseEmailTemplate } from './base.template.js';
 
 interface WelcomeTemplateOptions {
   email: string;
+  unsubscribeUrl?: string;
 }
 
-export const welcomeTemplate = ({ email }: WelcomeTemplateOptions): string => {
+export const welcomeTemplate = ({ email, unsubscribeUrl }: WelcomeTemplateOptions): string => {
   const content = `
     <div class="greeting">
       Bonjour et bienvenue !
@@ -38,6 +39,8 @@ export const welcomeTemplate = ({ email }: WelcomeTemplateOptions): string => {
     title: 'Bienvenue dans ma newsletter !',
     previewText: 'Merci de vous etre inscrit a la newsletter de Yao David Logan',
     content,
+    unsubscribeEmail: email,
+    unsubscribeUrl: unsubscribeUrl || '#',
   });
 };
 

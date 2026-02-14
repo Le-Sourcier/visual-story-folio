@@ -2,9 +2,12 @@ interface BaseTemplateOptions {
   title: string;
   previewText?: string;
   content: string;
+  unsubscribeEmail?: string;
+  unsubscribeUrl?: string;
 }
 
-export const baseEmailTemplate = ({ title, previewText, content }: BaseTemplateOptions): string => {
+export const baseEmailTemplate = (options: BaseTemplateOptions): string => {
+  const { title, previewText, content } = options;
   return `<!DOCTYPE html>
 <html lang="fr">
 <head>
@@ -157,6 +160,7 @@ export const baseEmailTemplate = ({ title, previewText, content }: BaseTemplateO
         <p style="margin-top: 8px;">
           <a href="#">Portfolio</a> | <a href="#">LinkedIn</a> | <a href="#">GitHub</a>
         </p>
+        ${options.unsubscribeEmail ? `<p style="margin-top: 12px; font-size: 11px; color: #4a5568;">Vous recevez cet email car vous etes inscrit a la newsletter.<br><a href="${options.unsubscribeUrl || '#'}" style="color: #0a7aff;">Se desabonner</a></p>` : ''}
       </div>
     </div>
   </div>
