@@ -165,6 +165,42 @@ router.delete('/:id', authMiddleware, adminMiddleware, validate(blogPostIdValida
  *         application/json:
  *           schema:
  *             type: object
+ *             required: [author, email, content]
+ *             properties:
+ *               author:
+ *                 type: string
+ *               email:
+ *                 type: string
+ *                 format: email
+ *               content:
+ *                 type: string
+ *     responses:
+ *       201:
+ *         description: Comment added
+ *       404:
+ *         description: Post not found
+ */
+router.post('/:id/comments', validate(createCommentValidator), addComment);
+
+/**
+ * @swagger
+ * /api/blog/{id}/comments:
+ *   post:
+ *     summary: Add a comment to a blog post
+ *     tags: [Blog]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
  *             required:
  *               - author
  *               - email
