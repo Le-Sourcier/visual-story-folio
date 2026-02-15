@@ -1,4 +1,5 @@
 import { DataTypes, Model, Optional, HasManyGetAssociationsMixin } from 'sequelize';
+import crypto from 'crypto';
 import { sequelize } from '../config/database.js';
 import { IBlogPost, IBlogComment } from '../types/entities.types.js';
 
@@ -137,8 +138,71 @@ BlogPost.init(
   }
 );
 
+// ======================== BlogView model (dedup unique views) ========================
+
+export class BlogView extends Model {
+  declare id: string;
+  declare postId: string;
+  declare visitorHash: string;
+  declare readonly createdAt: Date;
+
+  /**
+   * Generate a stable visitor fingerprint hash from IP + User-Agent.
+   * Not PII — just a SHA-256 hash for deduplication.
+   */
+  static hashVisitor(ip: string, userAgent: string): string {
+    return crypto.createHash('sha256').update(`${ip}::${userAgent}`).digest('hex');
+  }
+
+  /**
+   * Record a unique view. Returns true if new view, false if this visitor already viewed this post.
+   */
+  static async recordView(postId: string, ip: string, userAgent: string): Promise<boolean> {
+    const hash = BlogView.hashVisitor(ip, userAgent);
+
+    const existing = await BlogView.findOne({
+      where: { postId, visitorHash: hash },
+    });
+
+    if (existing) return false;
+
+    await BlogView.create({ postId, visitorHash: hash });
+    return true;
+  }
+}
+
+BlogView.init(
+  {
+    id: {
+      type: DataTypes.UUID,
+      defaultValue: DataTypes.UUIDV4,
+      primaryKey: true,
+    },
+    postId: {
+      type: DataTypes.UUID,
+      allowNull: false,
+    },
+    visitorHash: {
+      type: DataTypes.STRING(64),
+      allowNull: false,
+    },
+    createdAt: {
+      type: DataTypes.DATE,
+      defaultValue: DataTypes.NOW,
+    },
+  },
+  {
+    sequelize,
+    modelName: 'BlogView',
+    tableName: 'blog_views',
+    updatedAt: false,
+  }
+);
+
 // Associations
 BlogPost.hasMany(Comment, { foreignKey: 'postId', as: 'comments' });
 Comment.belongsTo(BlogPost, { foreignKey: 'postId' });
+BlogPost.hasMany(BlogView, { foreignKey: 'postId', as: 'views' });
+BlogView.belongsTo(BlogPost, { foreignKey: 'postId' });
 
 export default BlogPost;

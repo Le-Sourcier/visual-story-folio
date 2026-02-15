@@ -2,7 +2,7 @@ import { sequelize } from '../config/database.js';
 import Admin from './Admin.js';
 import Project from './Project.js';
 import Experience from './Experience.js';
-import BlogPost, { Comment } from './BlogPost.js';
+import BlogPost, { Comment, BlogView } from './BlogPost.js';
 import Contact from './Contact.js';
 import Appointment from './Appointment.js';
 import Newsletter from './Newsletter.js';
@@ -17,6 +17,7 @@ export {
   Experience,
   BlogPost,
   Comment,
+  BlogView,
   Contact,
   Appointment,
   Newsletter,

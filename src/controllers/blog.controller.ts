@@ -68,8 +68,12 @@ export const addComment = async (req: Request, res: Response, next: NextFunction
 
 export const trackView = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
-    await blogService.incrementView(req.params.id);
-    sendSuccess(res, null, 'View tracked');
+    const ip = (req.headers['x-forwarded-for'] as string)?.split(',')[0]?.trim()
+      || req.socket.remoteAddress
+      || 'unknown';
+    const userAgent = req.headers['user-agent'] || 'unknown';
+    const result = await blogService.incrementView(req.params.id, ip, userAgent);
+    sendSuccess(res, result, 'View tracked');
   } catch (error) {
     next(error);
   }

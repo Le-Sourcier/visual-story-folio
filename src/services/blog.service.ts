@@ -1,5 +1,4 @@
-import { fn, col } from 'sequelize';
-import BlogPost, { Comment } from '../models/BlogPost.js';
+import BlogPost, { Comment, BlogView } from '../models/BlogPost.js';
 import { IBlogPost, IBlogComment } from '../types/entities.types.js';
 import { AppError } from '../middlewares/error.middleware.js';
 import { ErrorCode, HttpStatus } from '../types/response.types.js';
@@ -106,12 +105,17 @@ class BlogService {
     return posts;
   }
 
-  async incrementView(id: string): Promise<void> {
+  async incrementView(id: string, ip: string, userAgent: string): Promise<{ unique: boolean }> {
     const post = await BlogPost.findByPk(id);
     if (!post) {
       throw new AppError('Blog post not found', HttpStatus.NOT_FOUND, ErrorCode.NOT_FOUND);
     }
-    await post.increment('viewCount');
+
+    const isNew = await BlogView.recordView(id, ip, userAgent);
+    if (isNew) {
+      await post.increment('viewCount');
+    }
+    return { unique: isNew };
   }
 
   async incrementShare(id: string): Promise<void> {
