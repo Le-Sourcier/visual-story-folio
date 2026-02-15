@@ -1,16 +1,25 @@
 export type MessageRole = 'user' | 'assistant';
 
+export type MessageType =
+  | 'text'
+  | 'appointment_picker'
+  | 'project_link'
+  | 'experience_link'
+  | 'blog_link'
+  | 'contact_form'
+  | 'loading';
+
 export interface Message {
   id: string;
   role: MessageRole;
   content: string;
   timestamp: Date;
-  type?: 'text' | 'appointment_picker' | 'project_link' | 'loading';
-  metadata?: any;
+  type?: MessageType;
+  metadata?: Record<string, unknown>;
 }
 
-export interface ChatbotState {
-  isOpen: boolean;
-  messages: Message[];
-  isTyping: boolean;
+export interface QuickAction {
+  id: string;
+  label: string;
+  prompt: string;
 }

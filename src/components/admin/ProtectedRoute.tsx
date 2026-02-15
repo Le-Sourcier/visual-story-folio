@@ -1,5 +1,4 @@
 import { Navigate, useLocation } from 'react-router-dom';
-import { useAuthStore, selectIsAuthenticated } from '@/stores/authStore';
 import { getToken } from '@/services/api';
 
 interface ProtectedRouteProps {
@@ -7,15 +6,12 @@ interface ProtectedRouteProps {
 }
 
 export function ProtectedRoute({ children }: ProtectedRouteProps) {
-  const isAuthenticated = useAuthStore(selectIsAuthenticated);
-  const storeToken = useAuthStore((s) => s.token);
   const location = useLocation();
 
-  // Check Zustand store token OR localStorage token (from api client)
+  // The real token in localStorage is the single source of truth
   const apiToken = getToken();
-  const hasValidToken = !!(storeToken || apiToken);
 
-  if (!isAuthenticated && !hasValidToken) {
+  if (!apiToken) {
     return <Navigate to="/admin/login" state={{ from: location }} replace />;
   }
 

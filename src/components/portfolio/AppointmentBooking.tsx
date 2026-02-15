@@ -9,15 +9,19 @@ import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { toast } from 'sonner';
 import { useCreateAppointment } from '@/hooks/queries';
+import { useVisitorSession } from '@/hooks/useVisitorSession';
 
 export function AppointmentBooking() {
+  const { session, isIdentified, isPersisted, saveSession } = useVisitorSession();
+
   const [date, setDate] = useState<Date | undefined>(new Date());
   const [step, setStep] = useState(1);
   const [selectedTime, setSelectedTime] = useState<string | null>(null);
   const [sujet, setSujet] = useState('');
   const [urgence, setUrgence] = useState<'non-urgent' | 'urgent'>('non-urgent');
-  const [nom, setNom] = useState('');
-  const [email, setEmail] = useState('');
+  const [nom, setNom] = useState(session?.name || '');
+  const [email, setEmail] = useState(session?.email || '');
+  const [rememberMe, setRememberMe] = useState(isPersisted);
 
   const createMutation = useCreateAppointment();
   const times = ['09:00', '10:00', '11:00', '14:00', '15:00', '16:00'];
@@ -30,6 +34,10 @@ export function AppointmentBooking() {
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       toast.error('Veuillez entrer une adresse email valide.');
       return;
+    }
+    // Save visitor session (with remember preference)
+    if (!isIdentified || rememberMe !== isPersisted) {
+      saveSession({ name: nom.trim(), email: email.trim() }, rememberMe);
     }
     setStep(2);
   };
@@ -164,6 +172,18 @@ export function AppointmentBooking() {
                   </div>
                 </div>
               </div>
+
+              {!isIdentified && (
+                <label className="flex items-center gap-3 cursor-pointer select-none">
+                  <input
+                    type="checkbox"
+                    checked={rememberMe}
+                    onChange={(e) => setRememberMe(e.target.checked)}
+                    className="w-4 h-4 rounded border-border text-primary focus:ring-primary"
+                  />
+                  <span className="text-sm text-muted-foreground">Se souvenir de moi pour les prochaines visites</span>
+                </label>
+              )}
 
               <button
                 onClick={handleNextToStep2}

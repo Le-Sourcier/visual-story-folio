@@ -20,10 +20,10 @@ export function AdminLogin() {
 
   const from = (location.state as any)?.from?.pathname || '/admin/dashboard';
 
-  // Redirect if already authenticated
+  // Redirect if already authenticated — only if a real token exists
   useEffect(() => {
-    const legacyToken = localStorage.getItem('admin_token');
-    if (isAuthenticated || token || legacyToken) {
+    const realToken = localStorage.getItem('admin_token');
+    if (realToken && (isAuthenticated || token)) {
       navigate(from, { replace: true });
     }
   }, [isAuthenticated, token, navigate, from]);

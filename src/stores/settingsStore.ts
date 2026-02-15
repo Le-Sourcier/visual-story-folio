@@ -34,12 +34,25 @@ export interface DisplayPreferences {
   denseMode: boolean;
 }
 
+export interface ChatbotQuickAction {
+  id: string;
+  label: string;
+  prompt: string;
+}
+
+export interface ChatbotSettings {
+  enabled: boolean;
+  welcomeMessage: string;
+  quickActions: ChatbotQuickAction[];
+}
+
 interface SettingsState {
   profile: ProfileData;
   socialLinks: SocialLinks;
   seo: SeoData;
   theme: ThemeMode;
   display: DisplayPreferences;
+  chatbot: ChatbotSettings;
   lastSaved: string | null;
 }
 
@@ -49,6 +62,7 @@ interface SettingsActions {
   updateSeo: (data: Partial<SeoData>) => void;
   setTheme: (theme: ThemeMode) => void;
   updateDisplay: (data: Partial<DisplayPreferences>) => void;
+  updateChatbot: (data: Partial<ChatbotSettings>) => void;
   resetSettings: () => void;
 }
 
@@ -85,12 +99,26 @@ const defaultDisplay: DisplayPreferences = {
   denseMode: false,
 };
 
+const defaultChatbot: ChatbotSettings = {
+  enabled: true,
+  welcomeMessage: "Bonjour ! 👋 Je suis l'assistant de **Yao David Logan**.\n\nJe peux vous parler de son parcours, ses competences, ses projets ou vous aider a prendre rendez-vous. Comment puis-je vous aider ?",
+  quickActions: [
+    { id: '1', label: 'Mes Projets', prompt: 'Montre-moi tes projets' },
+    { id: '2', label: 'Rendez-vous', prompt: 'Je veux prendre rendez-vous' },
+    { id: '3', label: 'Mon Profil', prompt: 'Qui est David Logan ?' },
+    { id: '4', label: 'Competences', prompt: 'Quelles sont tes competences ?' },
+    { id: '5', label: 'Lire le Blog', prompt: 'Montre-moi le blog' },
+    { id: '6', label: 'Contact', prompt: 'Comment te contacter ?' },
+  ],
+};
+
 const initialState: SettingsState = {
   profile: defaultProfile,
   socialLinks: defaultSocialLinks,
   seo: defaultSeo,
   theme: 'system',
   display: defaultDisplay,
+  chatbot: defaultChatbot,
   lastSaved: null,
 };
 
@@ -123,6 +151,12 @@ export const useSettingsStore = create<SettingsStore>()(
       updateDisplay: (data) =>
         set((state) => ({
           display: { ...state.display, ...data },
+          lastSaved: new Date().toISOString(),
+        })),
+
+      updateChatbot: (data) =>
+        set((state) => ({
+          chatbot: { ...state.chatbot, ...data },
           lastSaved: new Date().toISOString(),
         })),
 

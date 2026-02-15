@@ -1,11 +1,15 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Message } from './types';
 import { cn } from '../../../lib/utils';
-import { User, ExternalLink, Calendar, CheckCircle2 } from 'lucide-react';
+import { User, ExternalLink, Calendar, CheckCircle2, Send, Loader2, Briefcase, BookOpen, Mail } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
+import { MarkdownRenderer } from '@/components/shared/MarkdownRenderer';
+import { contactsApi } from '@/services/api';
+import { toast } from 'sonner';
+import { useVisitorSession } from '@/hooks/useVisitorSession';
 
 interface MessageBubbleProps {
   message: Message;
@@ -20,10 +24,7 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({ message }) => {
     <motion.div
       initial={{ opacity: 0, y: 15, scale: 0.98 }}
       animate={{ opacity: 1, y: 0, scale: 1 }}
-      className={cn(
-        "flex w-full gap-3",
-        isAssistant ? "justify-start" : "justify-end"
-      )}
+      className={cn("flex w-full gap-3", isAssistant ? "justify-start" : "justify-end")}
     >
       {isAssistant && (
         <div className="w-8 h-8 rounded-lg overflow-hidden shrink-0 mt-1 border border-primary/20 shadow-sm">
@@ -31,75 +32,78 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({ message }) => {
         </div>
       )}
 
-      <div className={cn(
-        "max-w-[85%] flex flex-col gap-1.5",
-        isAssistant ? "items-start" : "items-end"
-      )}>
+      <div className={cn("max-w-[85%] flex flex-col gap-1.5", isAssistant ? "items-start" : "items-end")}>
         <div className={cn(
           "px-4 py-3 rounded-2xl text-[13px] leading-relaxed shadow-sm transition-all",
-          isAssistant 
-            ? "bg-secondary/40 border border-border/50 text-foreground rounded-tl-none hover:bg-secondary/60" 
+          isAssistant
+            ? "bg-secondary/40 border border-border/50 text-foreground rounded-tl-none hover:bg-secondary/60"
             : "bg-primary text-primary-foreground rounded-tr-none shadow-primary/20"
         )}>
-          {message.content}
-
-          {message.type === 'project_link' && message.metadata?.projectId && (
-            <motion.div 
-              initial={{ opacity: 0, y: 5 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.2 }}
-              className="mt-3 pt-3 border-t border-border/30"
-            >
-              <Link 
-                to={`/work/${message.metadata.projectId}`}
-                className={cn(
-                  "flex items-center justify-between gap-3 p-3 rounded-xl border transition-all group",
-                  isAssistant ? "bg-background/50 hover:bg-background" : "bg-white/10 hover:bg-white/20 border-white/20"
-                )}
-              >
-                <div className="flex flex-col">
-                  <span className="text-[10px] uppercase tracking-wider opacity-60 font-bold">Project Overview</span>
-                  <span className="font-bold text-sm">{message.metadata.projectTitle}</span>
-                </div>
-                <ExternalLink className="w-4 h-4 transition-transform group-hover:translate-x-1 group-hover:-translate-y-1" />
-              </Link>
-            </motion.div>
+          {/* Markdown for assistant, plain text for user */}
+          {isAssistant ? (
+            <div className="chatbot-markdown text-[13px] [&_p]:mb-1 [&_p:last-child]:mb-0 [&_ul]:my-1 [&_li]:text-[13px] [&_strong]:text-foreground [&_a]:text-primary [&_a]:underline">
+              <MarkdownRenderer content={message.content} className="text-[13px]" />
+            </div>
+          ) : (
+            message.content
           )}
 
-          {message.type === 'appointment_picker' && message.metadata?.availableTimes && (
-            <motion.div 
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.2 }}
-              className="mt-4 grid grid-cols-2 gap-2"
-            >
-              {message.metadata.availableTimes.map((time: string, idx: number) => (
-                <motion.button
-                  key={time}
-                  initial={{ opacity: 0, scale: 0.9 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ delay: 0.3 + idx * 0.05 }}
-                  onClick={() => {
-                    const bookingSection = document.getElementById('booking');
-                    if (bookingSection) bookingSection.scrollIntoView({ behavior: 'smooth' });
-                  }}
-                  className="bg-background/50 hover:bg-primary/10 border border-border/50 hover:border-primary/50 text-foreground px-3 py-2.5 rounded-xl text-[11px] font-semibold transition-all flex items-center justify-center gap-2 group"
+          {/* Project Link Card */}
+          {message.type === 'project_link' && message.metadata?.projectId && (
+            <LinkCard
+              to={`/work/${message.metadata.projectId}`}
+              icon={<Briefcase className="w-3.5 h-3.5" />}
+              label="Voir le projet"
+              title={message.metadata.projectTitle as string}
+              isAssistant={isAssistant}
+            />
+          )}
+
+          {/* Experience Link Card */}
+          {message.type === 'experience_link' && message.metadata?.experienceId && (
+            <LinkCard
+              to={`/experience/${message.metadata.experienceId}`}
+              icon={<ExternalLink className="w-3.5 h-3.5" />}
+              label="Voir l'experience"
+              title={message.metadata.experienceTitle as string}
+              isAssistant={isAssistant}
+            />
+          )}
+
+          {/* Blog Link Card */}
+          {message.type === 'blog_link' && message.metadata?.posts && (
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.2 }} className="mt-3 pt-3 border-t border-border/30 space-y-2">
+              {(message.metadata.posts as Array<{ id: string; title: string; slug: string }>).map((post) => (
+                <Link
+                  key={post.id}
+                  to={`/blog/${post.id}`}
+                  className="flex items-center justify-between gap-2 p-2.5 rounded-xl bg-background/50 hover:bg-background border border-border/30 transition-all group"
                 >
-                  <Calendar className="w-3.5 h-3.5 text-primary group-hover:scale-110 transition-transform" /> 
-                  {time}
-                </motion.button>
+                  <div className="flex items-center gap-2 min-w-0">
+                    <BookOpen className="w-3.5 h-3.5 text-primary shrink-0" />
+                    <span className="font-semibold text-[11px] truncate">{post.title}</span>
+                  </div>
+                  <ExternalLink className="w-3 h-3 shrink-0 opacity-40 group-hover:opacity-100 transition-opacity" />
+                </Link>
               ))}
             </motion.div>
           )}
+
+          {/* Appointment Picker */}
+          {message.type === 'appointment_picker' && message.metadata?.availableTimes && (
+            <AppointmentPicker times={message.metadata.availableTimes as string[]} />
+          )}
+
+          {/* Contact Form Inline */}
+          {message.type === 'contact_form' && <InlineContactForm />}
         </div>
-        
+
+        {/* Timestamp */}
         <div className="flex items-center gap-2 px-1">
           <span className="text-[10px] text-muted-foreground/60 font-medium italic">
-            {format(message.timestamp, 'HH:mm', { locale: fr })}
+            {format(new Date(message.timestamp), 'HH:mm', { locale: fr })}
           </span>
-          {!isAssistant && (
-            <CheckCircle2 className="w-3 h-3 text-primary opacity-50" />
-          )}
+          {!isAssistant && <CheckCircle2 className="w-3 h-3 text-primary opacity-50" />}
         </div>
       </div>
 
@@ -111,3 +115,171 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({ message }) => {
     </motion.div>
   );
 };
+
+// ======================== LINK CARD ========================
+
+function LinkCard({ to, icon, label, title, isAssistant }: {
+  to: string; icon: React.ReactNode; label: string; title: string; isAssistant: boolean;
+}) {
+  return (
+    <motion.div initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="mt-3 pt-3 border-t border-border/30">
+      <Link
+        to={to}
+        className={cn(
+          "flex items-center justify-between gap-3 p-3 rounded-xl border transition-all group",
+          isAssistant ? "bg-background/50 hover:bg-background" : "bg-white/10 hover:bg-white/20 border-white/20"
+        )}
+      >
+        <div className="flex items-center gap-2 min-w-0">
+          <span className="text-primary shrink-0">{icon}</span>
+          <div className="flex flex-col min-w-0">
+            <span className="text-[10px] uppercase tracking-wider opacity-60 font-bold">{label}</span>
+            <span className="font-bold text-[12px] truncate">{title}</span>
+          </div>
+        </div>
+        <ExternalLink className="w-3.5 h-3.5 shrink-0 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+      </Link>
+    </motion.div>
+  );
+}
+
+// ======================== APPOINTMENT PICKER ========================
+
+function AppointmentPicker({ times }: { times: string[] }) {
+  const [selected, setSelected] = useState<string | null>(null);
+
+  const handleSelect = (time: string) => {
+    setSelected(time);
+    // Scroll to booking section on the main page
+    const bookingEl = document.getElementById('booking');
+    if (bookingEl) {
+      bookingEl.scrollIntoView({ behavior: 'smooth' });
+    } else {
+      // Navigate to home page booking section
+      window.location.href = '/#booking';
+    }
+  };
+
+  return (
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.2 }} className="mt-4 grid grid-cols-2 gap-2">
+      {times.map((time, idx) => (
+        <motion.button
+          key={time}
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ delay: 0.3 + idx * 0.05 }}
+          onClick={() => handleSelect(time)}
+          className={cn(
+            "border text-foreground px-3 py-2.5 rounded-xl text-[11px] font-semibold transition-all flex items-center justify-center gap-2 group",
+            selected === time
+              ? "bg-primary/20 border-primary/50 ring-1 ring-primary/30"
+              : "bg-background/50 hover:bg-primary/10 border-border/50 hover:border-primary/50"
+          )}
+        >
+          <Calendar className="w-3.5 h-3.5 text-primary group-hover:scale-110 transition-transform" />
+          {time}
+        </motion.button>
+      ))}
+    </motion.div>
+  );
+}
+
+// ======================== INLINE CONTACT FORM ========================
+
+function InlineContactForm() {
+  const { session, isIdentified, isPersisted, saveSession } = useVisitorSession();
+
+  const [name, setName] = useState(session?.name || '');
+  const [email, setEmail] = useState(session?.email || '');
+  const [message, setMessage] = useState('');
+  const [rememberMe, setRememberMe] = useState(isPersisted);
+  const [sending, setSending] = useState(false);
+  const [sent, setSent] = useState(false);
+
+  const isValidEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
+  const isFormValid = name.trim().length > 0 && isValidEmail && message.trim().length >= 10;
+
+  const handleSend = async () => {
+    if (!isFormValid) return;
+    // Save session (with remember preference)
+    if (!isIdentified || rememberMe !== isPersisted) {
+      saveSession({ name: name.trim(), email: email.trim() }, rememberMe);
+    }
+    setSending(true);
+    try {
+      await contactsApi.create({ name: name.trim(), email: email.trim(), subject: 'Via chatbot', message: message.trim() });
+      setSent(true);
+      toast.success('Message envoye !');
+    } catch {
+      toast.error("Erreur lors de l'envoi");
+    } finally {
+      setSending(false);
+    }
+  };
+
+  if (sent) {
+    return (
+      <div className="mt-3 pt-3 border-t border-border/30 flex items-center gap-2 text-emerald-500">
+        <CheckCircle2 className="w-4 h-4" />
+        <span className="text-[12px] font-bold">Message envoye avec succes !</span>
+      </div>
+    );
+  }
+
+  return (
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.2 }} className="mt-3 pt-3 border-t border-border/30 space-y-2">
+      <div className="flex items-center gap-1.5 text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
+        <Mail className="w-3 h-3 text-primary" /> Contact rapide
+      </div>
+      {isIdentified ? (
+        <div className="flex items-center gap-2 py-1.5 px-3 rounded-lg bg-primary/5 border border-primary/20">
+          <div className="w-5 h-5 rounded-full bg-primary/20 flex items-center justify-center text-primary text-[10px] font-black">
+            {session!.name.charAt(0).toUpperCase()}
+          </div>
+          <span className="text-[11px] font-semibold truncate">{session!.name}</span>
+          <span className="text-[10px] text-muted-foreground truncate">({session!.email})</span>
+        </div>
+      ) : (
+        <>
+          <input
+            value={name}
+            onChange={e => setName(e.target.value)}
+            placeholder="Votre nom"
+            type="text"
+            className="w-full h-8 px-3 rounded-lg bg-background/80 border border-border/50 text-[12px] outline-none focus:border-primary/50 transition-colors"
+          />
+          <input
+            value={email}
+            onChange={e => setEmail(e.target.value)}
+            placeholder="Votre email"
+            type="email"
+            className="w-full h-8 px-3 rounded-lg bg-background/80 border border-border/50 text-[12px] outline-none focus:border-primary/50 transition-colors"
+          />
+          <label className="flex items-center gap-1.5 cursor-pointer select-none">
+            <input
+              type="checkbox"
+              checked={rememberMe}
+              onChange={e => setRememberMe(e.target.checked)}
+              className="w-3.5 h-3.5 rounded border-border text-primary focus:ring-primary"
+            />
+            <span className="text-[10px] text-muted-foreground">Se souvenir de moi</span>
+          </label>
+        </>
+      )}
+      <textarea
+        value={message}
+        onChange={e => setMessage(e.target.value)}
+        placeholder="Votre message (min. 10 caracteres)..."
+        rows={2}
+        className="w-full px-3 py-2 rounded-lg bg-background/80 border border-border/50 text-[12px] outline-none focus:border-primary/50 transition-colors resize-none"
+      />
+      <button
+        onClick={handleSend}
+        disabled={sending || !isFormValid}
+        className="w-full h-8 rounded-lg bg-primary text-primary-foreground text-[11px] font-bold flex items-center justify-center gap-1.5 hover:bg-primary/90 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+      >
+        {sending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <><Send className="w-3.5 h-3.5" /> Envoyer</>}
+      </button>
+    </motion.div>
+  );
+}

@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { useForm } from 'react-hook-form';
 import { Send, Loader2 } from 'lucide-react';
@@ -5,6 +6,7 @@ import { NewsletterForm } from './NewsletterForm';
 import { AppointmentBooking } from './AppointmentBooking';
 import { useProfile } from '@/hooks/useProfile';
 import { useSendContact } from '@/hooks/queries';
+import { useVisitorSession } from '@/hooks/useVisitorSession';
 
 interface ContactFormData {
   name: string;
@@ -14,13 +16,23 @@ interface ContactFormData {
 }
 
 export function Contact() {
-  const { register, handleSubmit, reset, formState: { errors } } = useForm<ContactFormData>();
+  const { session, isIdentified, isPersisted, saveSession } = useVisitorSession();
+  const [rememberMe, setRememberMe] = useState(isPersisted);
+  const { register, handleSubmit, reset, formState: { errors } } = useForm<ContactFormData>({
+    defaultValues: {
+      name: session?.name || '',
+      email: session?.email || '',
+    },
+  });
   const profile = useProfile();
   const sendMutation = useSendContact();
 
   const onSubmit = (data: ContactFormData) => {
+    if (!isIdentified || rememberMe !== isPersisted) {
+      saveSession({ name: data.name.trim(), email: data.email.trim() }, rememberMe);
+    }
     sendMutation.mutate(data, {
-      onSuccess: () => reset(),
+      onSuccess: () => reset({ name: data.name, email: data.email, subject: '', message: '' }),
     });
   };
 
@@ -133,6 +145,18 @@ export function Contact() {
                 />
                 {errors.message && <p className="text-xs text-red-500">{errors.message.message}</p>}
               </div>
+
+              {!isIdentified && (
+                <label className="flex items-center gap-3 cursor-pointer select-none">
+                  <input
+                    type="checkbox"
+                    checked={rememberMe}
+                    onChange={(e) => setRememberMe(e.target.checked)}
+                    className="w-4 h-4 rounded border-border text-primary focus:ring-primary"
+                  />
+                  <span className="text-sm text-muted-foreground">Se souvenir de moi pour les prochaines visites</span>
+                </label>
+              )}
 
               <button
                 disabled={sendMutation.isPending}

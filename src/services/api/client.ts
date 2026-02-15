@@ -3,21 +3,42 @@ import type { ApiResponse, ApiError } from '@/types/admin.types';
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
 const API_TIMEOUT = parseInt(import.meta.env.VITE_API_TIMEOUT || '30000', 10);
 
-// Token management
+// Token management — single source: localStorage keys
 const TOKEN_KEY = 'admin_token';
 const REFRESH_TOKEN_KEY = 'admin_refresh_token';
 
 export const getToken = (): string | null => localStorage.getItem(TOKEN_KEY);
-export const setToken = (token: string): void => localStorage.setItem(TOKEN_KEY, token);
+export const setToken = (token: string): void => {
+  localStorage.setItem(TOKEN_KEY, token);
+  // Sync with Zustand auth store
+  syncAuthStore({ token });
+};
 export const removeToken = (): void => localStorage.removeItem(TOKEN_KEY);
 
 export const getRefreshToken = (): string | null => localStorage.getItem(REFRESH_TOKEN_KEY);
-export const setRefreshToken = (token: string): void => localStorage.setItem(REFRESH_TOKEN_KEY, token);
+export const setRefreshToken = (token: string): void => {
+  localStorage.setItem(REFRESH_TOKEN_KEY, token);
+  syncAuthStore({ refreshToken: token });
+};
 export const removeRefreshToken = (): void => localStorage.removeItem(REFRESH_TOKEN_KEY);
 
+// Keep Zustand auth-storage in sync with token changes
+function syncAuthStore(patch: Record<string, unknown>): void {
+  try {
+    const raw = localStorage.getItem('auth-storage');
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      parsed.state = { ...parsed.state, ...patch };
+      localStorage.setItem('auth-storage', JSON.stringify(parsed));
+    }
+  } catch { /* ignore */ }
+}
+
 export const clearTokens = (): void => {
-  removeToken();
-  removeRefreshToken();
+  localStorage.removeItem(TOKEN_KEY);
+  localStorage.removeItem(REFRESH_TOKEN_KEY);
+  // Reset the Zustand auth store
+  syncAuthStore({ token: null, refreshToken: null, isAuthenticated: false, user: null });
 };
 
 // HTTP Client
@@ -28,6 +49,8 @@ interface RequestOptions extends RequestInit {
 
 class ApiClient {
   private baseUrl: string;
+  private isRefreshing = false;
+  private refreshQueue: Array<{ resolve: () => void; reject: (e: Error) => void }> = [];
 
   constructor(baseUrl: string) {
     this.baseUrl = baseUrl;
@@ -59,9 +82,9 @@ class ApiClient {
     if (!response.ok) {
       const error = data as ApiError;
 
-      // Only clear tokens on real 401 from the server, don't redirect
       if (response.status === 401) {
-        clearTokens();
+        // Don't clear tokens here — let the caller handle retry with refresh
+        throw Object.assign(new Error(error.message || 'Unauthorized'), { status: 401 });
       }
 
       throw new Error(error.message || `HTTP Error: ${response.status}`);
@@ -72,6 +95,54 @@ class ApiClient {
       return (data as ApiResponse<T>).data;
     }
     return data as T;
+  }
+
+  private async tryRefreshToken(): Promise<boolean> {
+    const refreshTokenValue = getRefreshToken();
+    if (!refreshTokenValue) return false;
+
+    // If already refreshing, wait for it
+    if (this.isRefreshing) {
+      return new Promise((resolve, reject) => {
+        this.refreshQueue.push({
+          resolve: () => resolve(true),
+          reject: (e) => { reject(e); },
+        });
+      });
+    }
+
+    this.isRefreshing = true;
+    try {
+      const response = await fetch(`${this.baseUrl}/auth/refresh`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ refreshToken: refreshTokenValue }),
+      });
+
+      if (!response.ok) {
+        clearTokens();
+        this.refreshQueue.forEach((q) => q.reject(new Error('Session expiree')));
+        return false;
+      }
+
+      const result = await response.json();
+      const newToken = result.data?.token || result.token;
+      if (newToken) {
+        setToken(newToken);
+        this.refreshQueue.forEach((q) => q.resolve());
+        return true;
+      }
+
+      clearTokens();
+      return false;
+    } catch {
+      clearTokens();
+      this.refreshQueue.forEach((q) => q.reject(new Error('Session expiree')));
+      return false;
+    } finally {
+      this.isRefreshing = false;
+      this.refreshQueue = [];
+    }
   }
 
   private async fetchWithTimeout(
@@ -100,52 +171,58 @@ class ApiClient {
     }
   }
 
+  private async requestWithRetry<T>(
+    method: string,
+    endpoint: string,
+    data?: unknown,
+    options: RequestOptions = {}
+  ): Promise<T> {
+    const doRequest = () =>
+      this.fetchWithTimeout(`${this.baseUrl}${endpoint}`, {
+        method,
+        headers: this.getHeaders(options.skipAuth),
+        body: data ? JSON.stringify(data) : undefined,
+        ...options,
+      });
+
+    try {
+      const response = await doRequest();
+      return await this.handleResponse<T>(response);
+    } catch (error: any) {
+      // On 401 and we have a refresh token, attempt refresh then retry once
+      if (error.status === 401 && !options.skipAuth && getRefreshToken()) {
+        const refreshed = await this.tryRefreshToken();
+        if (refreshed) {
+          const retryResponse = await doRequest();
+          return this.handleResponse<T>(retryResponse);
+        }
+      }
+      // If no refresh token or refresh failed, clear tokens and throw
+      if (error.status === 401) {
+        clearTokens();
+      }
+      throw error;
+    }
+  }
+
   async get<T>(endpoint: string, options: RequestOptions = {}): Promise<T> {
-    const response = await this.fetchWithTimeout(`${this.baseUrl}${endpoint}`, {
-      method: 'GET',
-      headers: this.getHeaders(options.skipAuth),
-      ...options,
-    });
-    return this.handleResponse<T>(response);
+    return this.requestWithRetry<T>('GET', endpoint, undefined, options);
   }
 
   async post<T>(endpoint: string, data?: unknown, options: RequestOptions = {}): Promise<T> {
-    const response = await this.fetchWithTimeout(`${this.baseUrl}${endpoint}`, {
-      method: 'POST',
-      headers: this.getHeaders(options.skipAuth),
-      body: data ? JSON.stringify(data) : undefined,
-      ...options,
-    });
-    return this.handleResponse<T>(response);
+    return this.requestWithRetry<T>('POST', endpoint, data, options);
   }
 
   async put<T>(endpoint: string, data?: unknown, options: RequestOptions = {}): Promise<T> {
-    const response = await this.fetchWithTimeout(`${this.baseUrl}${endpoint}`, {
-      method: 'PUT',
-      headers: this.getHeaders(options.skipAuth),
-      body: data ? JSON.stringify(data) : undefined,
-      ...options,
-    });
-    return this.handleResponse<T>(response);
+    return this.requestWithRetry<T>('PUT', endpoint, data, options);
   }
 
   async patch<T>(endpoint: string, data?: unknown, options: RequestOptions = {}): Promise<T> {
-    const response = await this.fetchWithTimeout(`${this.baseUrl}${endpoint}`, {
-      method: 'PATCH',
-      headers: this.getHeaders(options.skipAuth),
-      body: data ? JSON.stringify(data) : undefined,
-      ...options,
-    });
-    return this.handleResponse<T>(response);
+    return this.requestWithRetry<T>('PATCH', endpoint, data, options);
   }
 
   async delete<T>(endpoint: string, options: RequestOptions = {}): Promise<T> {
-    const response = await this.fetchWithTimeout(`${this.baseUrl}${endpoint}`, {
-      method: 'DELETE',
-      headers: this.getHeaders(options.skipAuth),
-      ...options,
-    });
-    return this.handleResponse<T>(response);
+    return this.requestWithRetry<T>('DELETE', endpoint, undefined, options);
   }
 }
 

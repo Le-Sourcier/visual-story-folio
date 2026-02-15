@@ -1,22 +1,23 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { User, Lock, Palette, Globe, Sun, Moon, Monitor, Check, Camera, Shield, Eye, EyeOff, Loader2, CheckCircle2 } from 'lucide-react';
+import { User, Lock, Palette, Globe, Sun, Moon, Monitor, Check, Camera, Shield, Eye, EyeOff, Loader2, CheckCircle2, Bot, Plus, Trash2, GripVertical } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { useAuthStore } from '@/stores/authStore';
-import { useSettingsStore, applyTheme, type ThemeMode, type ProfileData, type SocialLinks, type SeoData } from '@/stores/settingsStore';
+import { useSettingsStore, applyTheme, type ThemeMode, type ProfileData, type SocialLinks, type SeoData, type ChatbotSettings, type ChatbotQuickAction } from '@/stores/settingsStore';
 import { useUIStore } from '@/stores/uiStore';
 import { useUpdateSettings } from '@/hooks/queries';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 
-type Section = 'profile' | 'security' | 'appearance' | 'seo';
+type Section = 'profile' | 'security' | 'appearance' | 'seo' | 'chatbot';
 
 const sectionList: { id: Section; label: string; icon: React.ElementType }[] = [
   { id: 'profile', label: 'Profil', icon: User },
   { id: 'security', label: 'Securite', icon: Lock },
   { id: 'appearance', label: 'Apparence', icon: Palette },
   { id: 'seo', label: 'SEO & Meta', icon: Globe },
+  { id: 'chatbot', label: 'Chatbot', icon: Bot },
 ];
 
 // --- Small reusable pieces ---
@@ -84,7 +85,7 @@ function useSaveFeedback() {
 }
 
 // ===================== MAIN COMPONENT =====================
-const VALID_SECTIONS: Section[] = ['profile', 'security', 'appearance', 'seo'];
+const VALID_SECTIONS: Section[] = ['profile', 'security', 'appearance', 'seo', 'chatbot'];
 
 export function SettingsPage() {
   const { user } = useAuthStore();
@@ -124,6 +125,10 @@ export function SettingsPage() {
   // --- SEO ---
   const [seoForm, setSeoForm] = useState<SeoData>({ ...settings.seo });
   const seoSave = useSaveFeedback();
+
+  // --- Chatbot ---
+  const [chatbotForm, setChatbotForm] = useState<ChatbotSettings>({ ...settings.chatbot });
+  const chatbotSave = useSaveFeedback();
 
   // --- API sync ---
   const updateSettingsMutation = useUpdateSettings();
@@ -190,6 +195,37 @@ export function SettingsPage() {
     seoSave.trigger(() => {
       settings.updateSeo(seoForm);
       updateSettingsMutation.mutate({ seo: seoForm });
+    });
+  };
+
+  const handleSaveChatbot = () => {
+    chatbotSave.trigger(() => {
+      settings.updateChatbot(chatbotForm);
+      updateSettingsMutation.mutate({ chatbot: chatbotForm });
+    });
+  };
+
+  const handleAddQuickAction = () => {
+    const newId = String(Date.now());
+    setChatbotForm({
+      ...chatbotForm,
+      quickActions: [...chatbotForm.quickActions, { id: newId, label: '', prompt: '' }],
+    });
+  };
+
+  const handleRemoveQuickAction = (id: string) => {
+    setChatbotForm({
+      ...chatbotForm,
+      quickActions: chatbotForm.quickActions.filter((a) => a.id !== id),
+    });
+  };
+
+  const handleUpdateQuickAction = (id: string, field: keyof ChatbotQuickAction, value: string) => {
+    setChatbotForm({
+      ...chatbotForm,
+      quickActions: chatbotForm.quickActions.map((a) =>
+        a.id === id ? { ...a, [field]: value } : a
+      ),
     });
   };
 
@@ -579,6 +615,98 @@ export function SettingsPage() {
                 </div>
                 <div className="flex justify-end pt-2">
                   <SaveButton onClick={handleSaveSeo} loading={seoSave.saving} saved={seoSave.saved} />
+                </div>
+              </div>
+            </SectionCard>
+          </>
+        )}
+
+        {/* ===== CHATBOT ===== */}
+        {activeSection === 'chatbot' && (
+          <>
+            <SectionCard title="Configuration du chatbot" description="Activez ou desactivez le chatbot et personnalisez son comportement.">
+              <div className="space-y-6">
+                {/* Enable/Disable toggle */}
+                <label className="flex items-center justify-between p-3 rounded-lg hover:bg-zinc-50 dark:hover:bg-zinc-800/50 cursor-pointer transition-colors">
+                  <div>
+                    <p className="text-[13px] font-medium text-zinc-800 dark:text-zinc-200">Activer le chatbot</p>
+                    <p className="text-[11px] text-zinc-400">Affiche le bouton chatbot sur le site public</p>
+                  </div>
+                  <button
+                    onClick={() => setChatbotForm({ ...chatbotForm, enabled: !chatbotForm.enabled })}
+                    className={cn(
+                      'relative w-9 h-5 rounded-full transition-colors shrink-0 ml-4',
+                      chatbotForm.enabled ? 'bg-zinc-900 dark:bg-white' : 'bg-zinc-200 dark:bg-zinc-700'
+                    )}
+                  >
+                    <div
+                      className={cn(
+                        'absolute top-0.5 w-4 h-4 bg-white dark:bg-zinc-900 rounded-full transition-transform shadow-sm',
+                        chatbotForm.enabled ? 'left-[18px]' : 'left-0.5'
+                      )}
+                    />
+                  </button>
+                </label>
+
+                {/* Welcome message */}
+                <div>
+                  <FieldLabel>Message de bienvenue</FieldLabel>
+                  <Textarea
+                    value={chatbotForm.welcomeMessage}
+                    onChange={(e) => setChatbotForm({ ...chatbotForm, welcomeMessage: e.target.value })}
+                    className="min-h-[100px] rounded-lg border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-sm resize-none"
+                    placeholder="Bonjour ! Comment puis-je vous aider ?"
+                  />
+                  <p className="text-[11px] text-zinc-400 mt-1">Supporte le Markdown (**gras**, *italique*, liens)</p>
+                </div>
+
+                <div className="flex justify-end pt-2">
+                  <SaveButton onClick={handleSaveChatbot} loading={chatbotSave.saving} saved={chatbotSave.saved} />
+                </div>
+              </div>
+            </SectionCard>
+
+            <SectionCard title="Actions rapides" description="Les boutons proposes en bas du chatbot pour guider les visiteurs.">
+              <div className="space-y-3">
+                {chatbotForm.quickActions.map((action, index) => (
+                  <div key={action.id} className="flex items-start gap-2 p-3 rounded-lg bg-zinc-50 dark:bg-zinc-800/50 border border-zinc-100 dark:border-zinc-800">
+                    <GripVertical className="w-4 h-4 text-zinc-300 dark:text-zinc-600 mt-2 shrink-0" />
+                    <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-2">
+                      <div>
+                        <FieldLabel>Label</FieldLabel>
+                        <FieldInput
+                          value={action.label}
+                          onChange={(e) => handleUpdateQuickAction(action.id, 'label', e.target.value)}
+                          placeholder="Ex: Mes Projets"
+                        />
+                      </div>
+                      <div>
+                        <FieldLabel>Message envoye</FieldLabel>
+                        <FieldInput
+                          value={action.prompt}
+                          onChange={(e) => handleUpdateQuickAction(action.id, 'prompt', e.target.value)}
+                          placeholder="Ex: Montre-moi tes projets"
+                        />
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => handleRemoveQuickAction(action.id)}
+                      className="mt-6 p-1.5 rounded-lg text-zinc-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors shrink-0"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                ))}
+
+                <button
+                  onClick={handleAddQuickAction}
+                  className="w-full py-2.5 rounded-lg border-2 border-dashed border-zinc-200 dark:border-zinc-700 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 hover:border-zinc-300 dark:hover:border-zinc-600 transition-colors flex items-center justify-center gap-2 text-[12px] font-medium"
+                >
+                  <Plus className="w-3.5 h-3.5" /> Ajouter une action
+                </button>
+
+                <div className="flex justify-end pt-2">
+                  <SaveButton onClick={handleSaveChatbot} loading={chatbotSave.saving} saved={chatbotSave.saved} />
                 </div>
               </div>
             </SectionCard>

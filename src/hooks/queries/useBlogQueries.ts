@@ -11,6 +11,7 @@ export const blogKeys = {
   details: () => [...blogKeys.all, 'detail'] as const,
   detail: (id: string) => [...blogKeys.details(), id] as const,
   bySlug: (slug: string) => [...blogKeys.all, 'slug', slug] as const,
+  stats: () => [...blogKeys.all, 'stats'] as const,
 };
 
 // Get All Posts
@@ -115,5 +116,28 @@ export function useAddComment() {
     onError: (error: Error) => {
       toast.error(error.message || 'Erreur lors de l\'ajout du commentaire');
     },
+  });
+}
+
+// Track View (fire-and-forget)
+export function useTrackView() {
+  return useMutation({
+    mutationFn: (postId: string) => blogApi.trackView(postId),
+  });
+}
+
+// Track Share (fire-and-forget)
+export function useTrackShare() {
+  return useMutation({
+    mutationFn: (postId: string) => blogApi.trackShare(postId),
+  });
+}
+
+// Blog Stats (admin)
+export function useBlogStats() {
+  return useQuery({
+    queryKey: blogKeys.stats(),
+    queryFn: () => blogApi.getStats(),
+    staleTime: 30 * 1000,
   });
 }

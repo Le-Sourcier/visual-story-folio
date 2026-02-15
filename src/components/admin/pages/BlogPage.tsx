@@ -1,15 +1,16 @@
 import { useState, useEffect } from 'react';
-import { useBlogPosts, useDeleteBlogPost } from '@/hooks/queries';
+import { useBlogPosts, useDeleteBlogPost, useBlogStats } from '@/hooks/queries';
 import { useUIStore, selectModal } from '@/stores/uiStore';
 import { DataTable, type Column } from '../shared/DataTable';
 import { ConfirmDialog } from '../shared/ConfirmDialog';
 import { StatusBadge } from '../shared/StatusBadge';
 import { BlogEditorPage } from './BlogEditorPage';
-import { Clock } from 'lucide-react';
+import { Clock, Eye, Share2, MessageSquare, FileText } from 'lucide-react';
 import type { BlogPost } from '@/types/admin.types';
 
 export function BlogPage() {
   const { data: posts = [], isLoading } = useBlogPosts();
+  const { data: stats } = useBlogStats();
   const deleteMutation = useDeleteBlogPost();
   const modal = useUIStore(selectModal);
   const closeModal = useUIStore((s) => s.closeModal);
@@ -58,6 +59,33 @@ export function BlogPage() {
       ),
     },
     {
+      key: 'viewCount',
+      label: 'Vues',
+      render: (item) => (
+        <span className="text-[11px] text-zinc-500 dark:text-zinc-400 flex items-center gap-1">
+          <Eye className="w-3 h-3" /> {item.viewCount || 0}
+        </span>
+      ),
+    },
+    {
+      key: 'shareCount',
+      label: 'Partages',
+      render: (item) => (
+        <span className="text-[11px] text-zinc-500 dark:text-zinc-400 flex items-center gap-1">
+          <Share2 className="w-3 h-3" /> {item.shareCount || 0}
+        </span>
+      ),
+    },
+    {
+      key: 'comments',
+      label: 'Commentaires',
+      render: (item) => (
+        <span className="text-[11px] text-zinc-500 dark:text-zinc-400 flex items-center gap-1">
+          <MessageSquare className="w-3 h-3" /> {item.comments?.length || 0}
+        </span>
+      ),
+    },
+    {
       key: 'readTime',
       label: 'Lecture',
       render: (item) => (
@@ -100,9 +128,29 @@ export function BlogPage() {
     );
   }
 
+  const statCards = [
+    { label: 'Total vues', value: stats?.totalViews ?? 0, icon: Eye, color: 'text-blue-500' },
+    { label: 'Partages', value: stats?.totalShares ?? 0, icon: Share2, color: 'text-green-500' },
+    { label: 'Commentaires', value: stats?.totalComments ?? 0, icon: MessageSquare, color: 'text-amber-500' },
+    { label: 'Articles publies', value: stats?.publishedPosts ?? 0, icon: FileText, color: 'text-violet-500' },
+  ];
+
   return (
     <>
-      {/* Create button at top */}
+      {/* Stats cards */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
+        {statCards.map((s) => (
+          <div key={s.label} className="p-4 rounded-xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800">
+            <div className="flex items-center gap-2 mb-2">
+              <s.icon className={`w-4 h-4 ${s.color}`} />
+              <span className="text-[11px] text-zinc-400 font-medium">{s.label}</span>
+            </div>
+            <p className="text-2xl font-black text-zinc-800 dark:text-zinc-100">{s.value.toLocaleString('fr-FR')}</p>
+          </div>
+        ))}
+      </div>
+
+      {/* Create button */}
       <div className="flex justify-end mb-4">
         <button
           onClick={handleCreate}

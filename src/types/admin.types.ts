@@ -184,12 +184,23 @@ export interface BlogPost {
   readTime: string;
   author: string;
   published: boolean;
+  viewCount: number;
+  shareCount: number;
   comments?: BlogComment[];
   createdAt?: string;
   updatedAt?: string;
 }
 
-export type BlogPostFormData = Omit<BlogPost, 'id' | 'slug' | 'readTime' | 'comments' | 'createdAt' | 'updatedAt'>;
+export type BlogPostFormData = Omit<BlogPost, 'id' | 'slug' | 'readTime' | 'viewCount' | 'shareCount' | 'comments' | 'createdAt' | 'updatedAt'>;
+
+export interface BlogStats {
+  totalViews: number;
+  totalShares: number;
+  totalComments: number;
+  totalPosts: number;
+  publishedPosts: number;
+  topPosts: Pick<BlogPost, 'id' | 'title' | 'slug' | 'viewCount' | 'shareCount'>[];
+}
 
 // ========================
 // Contact Types

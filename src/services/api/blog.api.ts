@@ -1,5 +1,5 @@
 import { apiClient } from './client';
-import type { BlogPost, BlogPostFormData, BlogComment } from '@/types/admin.types';
+import type { BlogPost, BlogPostFormData, BlogComment, BlogStats } from '@/types/admin.types';
 
 export const blogApi = {
   async getAll(published?: boolean): Promise<BlogPost[]> {
@@ -32,6 +32,18 @@ export const blogApi = {
     data: { author: string; email: string; content: string }
   ): Promise<BlogComment> {
     return apiClient.post<BlogComment>(`/blog/${postId}/comments`, data);
+  },
+
+  async trackView(postId: string): Promise<void> {
+    return apiClient.post(`/blog/${postId}/view`, {});
+  },
+
+  async trackShare(postId: string): Promise<void> {
+    return apiClient.post(`/blog/${postId}/share`, {});
+  },
+
+  async getStats(): Promise<BlogStats> {
+    return apiClient.get<BlogStats>('/blog/stats/overview');
   },
 };
 

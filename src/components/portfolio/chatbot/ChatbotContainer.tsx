@@ -5,25 +5,29 @@ import { useChatbot } from './useChatbot';
 import { ChatWindow } from './ChatWindow';
 import { cn } from '../../../lib/utils';
 import { hasConsented } from '@/hooks/useCookieConsent';
+import { useSettingsStore } from '@/stores/settingsStore';
 
 export const ChatbotContainer: React.FC = () => {
-  // Preservation of the environment variable check as per the original code
-  const isEnabled = import.meta.env.VITE_CHATBOT_ENABLED !== 'false';
-  
-  const { 
-    isOpen, 
-    messages, 
-    isTyping, 
-    toggleChat, 
-    sendMessage, 
-    resetChat 
+  const envEnabled = import.meta.env.VITE_CHATBOT_ENABLED !== 'false';
+  const chatbotEnabled = useSettingsStore((s) => s.chatbot.enabled);
+  const isEnabled = envEnabled && chatbotEnabled;
+
+  const {
+    isOpen,
+    messages,
+    isTyping,
+    isOffline,
+    quickActions,
+    toggleChat,
+    sendMessage,
+    resetChat,
   } = useChatbot();
 
   if (!isEnabled || !hasConsented()) return null;
 
   return (
     <>
-      {/* Floating Trigger Button */}
+      {/* Floating Trigger Button - hidden on mobile when chat is open */}
       <motion.button
         initial={{ scale: 0, opacity: 0, y: 20 }}
         animate={{ scale: 1, opacity: 1, y: 0 }}
@@ -32,45 +36,28 @@ export const ChatbotContainer: React.FC = () => {
         onClick={toggleChat}
         className={cn(
           "fixed bottom-6 right-6 sm:bottom-8 md:bottom-12 md:right-12 w-14 h-14 md:w-16 md:h-16 rounded-full flex items-center justify-center z-[110] transition-all duration-300 shadow-2xl group overflow-hidden",
-          isOpen 
-            ? "bg-background border border-border text-foreground" 
+          isOpen
+            ? "bg-background border border-border text-foreground hidden sm:flex"
             : "bg-primary text-primary-foreground"
         )}
       >
         <div className="absolute inset-0 bg-gradient-to-tr from-primary/20 via-transparent to-white/10 opacity-0 group-hover:opacity-100 transition-opacity" />
-        
+
         <AnimatePresence mode="wait">
           {isOpen ? (
-            <motion.div
-              key="close"
-              initial={{ rotate: -90, opacity: 0 }}
-              animate={{ rotate: 0, opacity: 1 }}
-              exit={{ rotate: 90, opacity: 0 }}
-              transition={{ duration: 0.2 }}
-            >
+            <motion.div key="close" initial={{ rotate: -90, opacity: 0 }} animate={{ rotate: 0, opacity: 1 }} exit={{ rotate: 90, opacity: 0 }} transition={{ duration: 0.2 }}>
               <X className="w-6 h-6" />
             </motion.div>
           ) : (
-            <motion.div
-              key="open"
-              initial={{ rotate: 90, opacity: 0 }}
-              animate={{ rotate: 0, opacity: 1 }}
-              exit={{ rotate: -90, opacity: 0 }}
-              transition={{ duration: 0.2 }}
-              className="relative flex items-center justify-center"
-            >
+            <motion.div key="open" initial={{ rotate: 90, opacity: 0 }} animate={{ rotate: 0, opacity: 1 }} exit={{ rotate: -90, opacity: 0 }} transition={{ duration: 0.2 }} className="relative flex items-center justify-center">
               <Bot className="w-6 h-6 md:w-7 md:h-7 relative z-10" />
-              <motion.div
-                animate={{ scale: [1, 1.2, 1], opacity: [0.5, 1, 0.5] }}
-                transition={{ repeat: Infinity, duration: 2 }}
-                className="absolute -top-1 -right-1 z-20"
-              >
+              <motion.div animate={{ scale: [1, 1.2, 1], opacity: [0.5, 1, 0.5] }} transition={{ repeat: Infinity, duration: 2 }} className="absolute -top-1 -right-1 z-20">
                 <Sparkles className="w-3 h-3 md:w-4 md:h-4 text-yellow-400" />
               </motion.div>
             </motion.div>
           )}
         </AnimatePresence>
-        
+
         {!isOpen && messages.length > 1 && (
           <span className="absolute top-2 right-2 md:top-3 md:right-3 w-3 h-3 bg-red-500 border-2 border-background rounded-full animate-pulse" />
         )}
@@ -82,6 +69,8 @@ export const ChatbotContainer: React.FC = () => {
           <ChatWindow
             messages={messages}
             isTyping={isTyping}
+            isOffline={isOffline}
+            quickActions={quickActions}
             onClose={toggleChat}
             onSendMessage={sendMessage}
             onReset={resetChat}
