@@ -1,24 +1,33 @@
 import { useState, useCallback, useEffect } from 'react';
 import { Message, QuickAction } from './types';
-import { getInitialMessage, processUserMessage } from './chatbotEngine';
+import { processUserMessage } from './chatbotEngine';
 import { chatbotApi } from '@/services/api/chatbot.api';
 import { useChatbotStore } from '@/stores/chatbotStore';
-
-const DEFAULT_QUICK_ACTIONS: QuickAction[] = [
-  { id: '1', label: 'Mes Projets', prompt: 'Montre-moi tes projets' },
-  { id: '2', label: 'Rendez-vous', prompt: 'Je veux prendre rendez-vous' },
-  { id: '3', label: 'Mon Profil', prompt: 'Qui est David Logan ?' },
-  { id: '4', label: 'Competences', prompt: 'Quelles sont tes competences ?' },
-  { id: '5', label: 'Lire le Blog', prompt: 'Montre-moi le blog' },
-  { id: '6', label: 'Contact', prompt: 'Comment te contacter ?' },
-];
+import { useSettingsStore } from '@/stores/settingsStore';
 
 export function useChatbot() {
   const store = useChatbotStore();
+  const chatbotSettings = useSettingsStore((s) => s.chatbot);
   const [isTyping, setIsTyping] = useState(false);
-  const [quickActions, setQuickActions] = useState<QuickAction[]>(DEFAULT_QUICK_ACTIONS);
+  const [quickActions, setQuickActions] = useState<QuickAction[]>(chatbotSettings.quickActions);
 
-  // Initialize: load initial message + quick actions
+  // Sync quick actions when settings change
+  useEffect(() => {
+    if (chatbotSettings.quickActions.length > 0) {
+      setQuickActions(chatbotSettings.quickActions);
+    }
+  }, [chatbotSettings.quickActions]);
+
+  // Build welcome message from settings
+  const buildWelcomeMessage = useCallback((): Message => ({
+    id: '1',
+    role: 'assistant',
+    content: chatbotSettings.welcomeMessage,
+    timestamp: new Date(),
+    type: 'text',
+  }), [chatbotSettings.welcomeMessage]);
+
+  // Initialize on first load (no cached messages)
   useEffect(() => {
     if (store.messages.length > 0) return;
 
@@ -32,12 +41,25 @@ export function useChatbot() {
         if (actions?.length) setQuickActions(actions);
         store.setOffline(false);
       } catch {
-        store.setMessages([getInitialMessage()]);
+        store.setMessages([buildWelcomeMessage()]);
         store.setOffline(true);
       }
     };
     init();
   }, []);
+
+  // Keep welcome message in sync with settings changes
+  useEffect(() => {
+    if (store.messages.length === 0) return;
+    const first = store.messages[0];
+    if (first.role !== 'assistant' || first.id !== '1') return;
+    if (first.content === chatbotSettings.welcomeMessage) return;
+    // Replace the welcome message, keep rest of conversation
+    store.setMessages([
+      buildWelcomeMessage(),
+      ...store.messages.slice(1),
+    ]);
+  }, [chatbotSettings.welcomeMessage]);
 
   const toggleChat = useCallback(() => {
     store.toggleOpen();
@@ -100,9 +122,9 @@ export function useChatbot() {
       const initialMsg = await chatbotApi.getInitialMessage();
       store.setMessages([{ ...initialMsg, timestamp: new Date() }]);
     } catch {
-      store.setMessages([getInitialMessage()]);
+      store.setMessages([buildWelcomeMessage()]);
     }
-  }, [store]);
+  }, [store, buildWelcomeMessage]);
 
   return {
     isOpen: store.isOpen,

@@ -1,39 +1,16 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { motion } from 'framer-motion';
-import { blogPosts as mockBlogPosts, BlogPost } from '../../data/blogMockData';
 import { Calendar, Clock, ArrowRight, User } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { api } from '@/services/api';
+import { useBlogPosts } from '@/hooks/queries';
 
 export function LatestBlogPosts() {
-  const [posts, setPosts] = useState<BlogPost[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const fetchPosts = async () => {
-      try {
-        const data = await api.get('/blog');
-        setPosts(data);
-      } catch (error) {
-        setPosts(mockBlogPosts); // Fallback
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchPosts();
-  }, []);
+  const { data: posts = [], isLoading: loading } = useBlogPosts(true);
 
   // Get the 3 latest posts
-  const latestPosts = [...posts]
-    .sort((a, b) => {
-      // Simple date sort fallback
-      const dateA = new Date(a.date).getTime();
-      const dateB = new Date(b.date).getTime();
-      return isNaN(dateB) ? -1 : dateB - dateA;
-    })
-    .slice(0, 3);
+  const latestPosts = posts.slice(0, 3);
 
-  if (loading && posts.length === 0) return null;
+  if (loading || posts.length === 0) return null;
 
   return (
     <section className="py-24 px-6 md:px-12 lg:px-24 bg-background relative overflow-hidden">

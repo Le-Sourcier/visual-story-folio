@@ -1,8 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
-import { useParams, Link, useNavigate } from 'react-router-dom';
+import { useParams, Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronLeft, Calendar, Clock, User, Share2, MessageSquare, Send, Mail, Loader2, LogOut, Eye } from 'lucide-react';
-import { blogPosts as mockBlogPosts } from '../../data/blogMockData';
 import { MarkdownRenderer } from '../shared/MarkdownRenderer';
 import { toast } from 'sonner';
 import { useBlogPost, useAddComment, useTrackView, useTrackShare } from '@/hooks/queries';
@@ -13,22 +12,18 @@ import type { BlogComment } from '@/types/admin.types';
 
 export function BlogPostDetail() {
   const { id } = useParams();
-  const navigate = useNavigate();
 
   // API
-  const { data: apiPost, isLoading: apiLoading } = useBlogPost(id || '');
+  const { data: apiPost, isLoading: apiLoading, isError } = useBlogPost(id || '');
   const addCommentMutation = useAddComment();
   const trackViewMutation = useTrackView();
   const trackShareMutation = useTrackShare();
-  const viewTracked = useRef(false);
 
   // Visitor session (persisted in sessionStorage)
   const { session, isIdentified, saveSession, clearSession } = useVisitorSession();
 
-  // Fallback to mock data
-  const mockPost = mockBlogPosts.find(p => p.id === id);
-  const post = apiPost || mockPost;
-  const loading = apiLoading && !mockPost;
+  const post = apiPost;
+  const loading = apiLoading;
   const comments: BlogComment[] = (apiPost?.comments as BlogComment[]) || [];
 
   // Form state
@@ -38,17 +33,14 @@ export function BlogPostDetail() {
 
   useEffect(() => { window.scrollTo(0, 0); }, [id]);
 
-  // Track view once per page visit
+  // Track view — backend handles deduplication (1 unique visitor = 1 view per article)
+  const viewTracked = useRef(false);
   useEffect(() => {
     if (id && apiPost && !viewTracked.current) {
       viewTracked.current = true;
       trackViewMutation.mutate(id);
     }
   }, [id, apiPost]);
-
-  useEffect(() => {
-    if (!loading && !post) navigate('/404');
-  }, [loading, post, navigate]);
 
   if (loading) {
     return (
@@ -58,7 +50,45 @@ export function BlogPostDetail() {
     );
   }
 
-  if (!post) return null;
+  if (isError || !post) {
+    return (
+      <div className="pt-32 pb-24 px-6 md:px-12 lg:px-24 min-h-screen bg-background">
+        <div className="max-w-2xl mx-auto text-center py-24">
+          <Link to="/blog" className="inline-flex items-center gap-2 text-muted-foreground hover:text-primary transition-colors mb-12 font-bold text-xs uppercase tracking-widest">
+            <ChevronLeft className="w-4 h-4" />
+            Retour au blog
+          </Link>
+          <div className="w-20 h-20 rounded-full bg-secondary flex items-center justify-center mx-auto mb-8">
+            <MessageSquare className="w-10 h-10 text-muted-foreground" />
+          </div>
+          <h2 className="text-3xl font-black tracking-tight mb-4">
+            {isError ? 'Article temporairement indisponible' : 'Article introuvable'}
+          </h2>
+          <p className="text-muted-foreground text-base mb-8 max-w-md mx-auto">
+            {isError
+              ? 'Le serveur ne repond pas pour le moment. Veuillez reessayer dans quelques instants.'
+              : "Cet article n'existe pas ou a ete supprime."}
+          </p>
+          <div className="flex items-center justify-center gap-4">
+            <Link
+              to="/blog"
+              className="px-6 py-3 bg-primary text-primary-foreground rounded-2xl font-bold text-sm hover:shadow-xl hover:shadow-primary/20 transition-all"
+            >
+              Voir tous les articles
+            </Link>
+            {isError && (
+              <button
+                onClick={() => window.location.reload()}
+                className="px-6 py-3 border border-border rounded-2xl font-bold text-sm hover:bg-secondary transition-all"
+              >
+                Reessayer
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   // ======================== HANDLERS ========================
 
@@ -148,18 +178,14 @@ export function BlogPostDetail() {
             </div>
 
             <div className="ml-auto flex items-center gap-4">
-              {'viewCount' in post && (
-                <div className="flex items-center gap-1.5 text-muted-foreground">
-                  <Eye className="w-4 h-4" />
-                  <span className="text-xs font-bold">{(post as any).viewCount || 0}</span>
-                </div>
-              )}
-              {'shareCount' in post && (
-                <div className="flex items-center gap-1.5 text-muted-foreground">
-                  <Share2 className="w-4 h-4" />
-                  <span className="text-xs font-bold">{(post as any).shareCount || 0}</span>
-                </div>
-              )}
+              <div className="flex items-center gap-1.5 text-muted-foreground">
+                <Eye className="w-4 h-4" />
+                <span className="text-xs font-bold">{post.viewCount || 0}</span>
+              </div>
+              <div className="flex items-center gap-1.5 text-muted-foreground">
+                <Share2 className="w-4 h-4" />
+                <span className="text-xs font-bold">{post.shareCount || 0}</span>
+              </div>
               <button onClick={handleShare} className="p-3 rounded-xl border border-border hover:bg-secondary transition-colors">
                 <Share2 className="w-5 h-5" />
               </button>
