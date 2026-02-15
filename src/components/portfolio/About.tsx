@@ -11,7 +11,7 @@ export function About() {
   const profile = useProfile();
   const [experiences, setExperiences] = useState<Experience[]>([]);
   const [loading, setLoading] = useState(true);
-  const profileImage = profile.avatar || 'https://storage.googleapis.com/dala-prod-public-storage/generated-images/564508a5-e18e-4304-b909-f59e34b774ee/profile-picture-4826774e-1770728429712.webp';
+  const profileImage = profile.avatar;
 
   useEffect(() => {
     const fetchExp = async () => {
@@ -145,7 +145,7 @@ FORMATION
                 {firstName} <br /><span className="text-primary italic">{lastName}</span>
               </h2>
               <p className="text-2xl md:text-3xl text-muted-foreground leading-tight font-medium">
-                {cvData.personalInformation.title.split('&')[0]} & Expert en <span className="text-foreground border-b-4 border-primary/20">Solutions Scalables.</span>
+                {profile.title.split('&')[0]} & Expert en <span className="text-foreground border-b-4 border-primary/20">Solutions Scalables.</span>
               </p>
             </motion.div>
             
@@ -156,7 +156,7 @@ FORMATION
               transition={{ delay: 0.1 }}
               className="text-lg text-muted-foreground leading-relaxed mb-16 max-w-2xl font-medium"
             >
-              {cvData.profile.summary}
+              {profile.bio}
             </motion.p>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-16 mb-20">

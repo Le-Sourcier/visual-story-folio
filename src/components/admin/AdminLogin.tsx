@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { authApi } from '@/services/api';
 import { useAuthStore } from '@/stores/authStore';
 import { toast } from 'sonner';
+import { envConfig } from '@/config/env';
 
 export function AdminLogin() {
   const [email, setEmail] = useState('');
@@ -130,7 +131,7 @@ export function AdminLogin() {
         </div>
 
         <p className="mt-10 text-center text-sm font-medium text-muted-foreground">
-          &copy; {new Date().getFullYear()} Yao Logan Admin Portal
+          &copy; {new Date().getFullYear()} {envConfig.appName}
         </p>
       </motion.div>
     </div>

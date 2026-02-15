@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Menu, X, ArrowRight } from 'lucide-react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { ThemeToggle } from './ThemeToggle';
+import { envConfig } from '@/config/env';
 
 export function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
@@ -61,7 +62,7 @@ export function Navbar() {
             to="/" 
             className="text-2xl font-black tracking-tighter flex items-center gap-1 group"
           >
-            <span className="group-hover:text-primary transition-colors">CREATIVE</span>
+            <span className="group-hover:text-primary transition-colors">{envConfig.appBrand}</span>
             <span className="text-primary w-2 h-2 rounded-full bg-primary" />
           </Link>
         </motion.div>

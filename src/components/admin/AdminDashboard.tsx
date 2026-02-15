@@ -22,6 +22,7 @@ import { api } from '@/services/api';
 import { Experience } from '@/data/cvData';
 import { Project } from '@/data/mockData';
 import { ProjectForm, ExperienceForm, BlogPostForm } from './AdminForms';
+import { envConfig } from '@/config/env';
 
 export function AdminDashboard() {
   const navigate = useNavigate();
@@ -156,10 +157,10 @@ export function AdminDashboard() {
         <div className="mt-auto pt-8 border-t border-border">
           <div className="flex items-center gap-4 p-4 bg-secondary/50 rounded-2xl mb-6">
             <div className="w-10 h-10 rounded-full bg-primary/20 overflow-hidden">
-              <img src="https://storage.googleapis.com/dala-prod-public-storage/generated-images/564508a5-e18e-4304-b909-f59e34b774ee/profile-picture-4826774e-1770728429712.webp" alt="Admin" className="w-full h-full object-cover" />
+              <img src={envConfig.owner.avatar} alt="Admin" className="w-full h-full object-cover" />
             </div>
             <div>
-              <p className="text-sm font-black uppercase tracking-tight">Yao Logan</p>
+              <p className="text-sm font-black uppercase tracking-tight">{envConfig.owner.name || 'Admin'}</p>
               <p className="text-[10px] font-bold text-primary uppercase tracking-widest">Administrateur</p>
             </div>
           </div>
@@ -184,7 +185,7 @@ export function AdminDashboard() {
               {activeTab === "settings" && "Paramètres"}
               {activeTab === "users" && "Utilisateurs"}
             </h2>
-            <p className="text-muted-foreground font-medium italic">Bienvenue dans votre espace de pilotage, Logan.</p>
+            <p className="text-muted-foreground font-medium italic">Bienvenue dans votre espace de pilotage.</p>
           </div>
           {activeTab !== "dashboard" && activeTab !== "settings" && activeTab !== "users" && (
             <Button 

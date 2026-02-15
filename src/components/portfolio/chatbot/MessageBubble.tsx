@@ -10,12 +10,13 @@ import { MarkdownRenderer } from '@/components/shared/MarkdownRenderer';
 import { contactsApi } from '@/services/api';
 import { toast } from 'sonner';
 import { useVisitorSession } from '@/hooks/useVisitorSession';
+import { envConfig } from '@/config/env';
 
 interface MessageBubbleProps {
   message: Message;
 }
 
-const AI_AVATAR = "https://storage.googleapis.com/dala-prod-public-storage/generated-images/564508a5-e18e-4304-b909-f59e34b774ee/ai-avatar-ca4be779-1770887268386.webp";
+const AI_AVATAR = envConfig.chatbot.avatar;
 
 export const MessageBubble: React.FC<MessageBubbleProps> = ({ message }) => {
   const isAssistant = message.role === 'assistant';

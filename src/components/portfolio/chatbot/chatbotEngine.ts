@@ -1,12 +1,14 @@
 import { PROJECTS } from '../../../data/mockData';
-import { blogPosts } from '../../../data/blogMockData';
-import { cvData } from '../../../data/cvData';
+import { envConfig } from '@/config/env';
 import { Message } from './types';
+
+const owner = envConfig.owner;
+const firstName = owner.name.split(' ').pop() || owner.name;
 
 export const getInitialMessage = (): Message => ({
   id: '1',
   role: 'assistant',
-  content: `Bonjour ! Je suis l'assistant virtuel de ${cvData.personalInformation.name}. Je peux vous parler de son parcours de ${cvData.personalInformation.title}, de ses compétences techniques, de ses projets ou vous aider à prendre rendez-vous avec lui. Comment puis-je vous aider ?`,
+  content: envConfig.chatbot.welcomeMessage,
   timestamp: new Date(),
   type: 'text'
 });
@@ -14,81 +16,83 @@ export const getInitialMessage = (): Message => ({
 export const processUserMessage = async (content: string): Promise<Partial<Message>> => {
   const input = content.toLowerCase().trim();
   const NL = String.fromCharCode(10);
-  
+  const firstNameLower = firstName.toLowerCase();
+
   await new Promise(resolve => setTimeout(resolve, 800));
 
   if (
-    input.includes('qui es-tu') || 
-    input.includes('qui est david') || 
-    input.includes('présente-toi') || 
+    input.includes('qui es-tu') ||
+    input.includes(`qui est ${firstNameLower}`) ||
+    input.includes('presente-toi') ||
     input.includes('parle-moi de toi') ||
     input.includes('ton profil') ||
     input.includes('mon profil') ||
-    input.includes('identité')
+    input.includes('identite')
   ) {
     return {
-      content: `${cvData.personalInformation.name} est un ${cvData.personalInformation.title} basé à ${cvData.personalInformation.location}. ${cvData.profile.summary}`,
+      content: `${owner.name} est un ${owner.title} base a ${owner.location}. ${owner.bio}`,
       type: 'text'
     };
   }
 
   if (
-    input.includes('expérience') || 
-    input.includes('parcours') || 
-    input.includes('travaillé') || 
+    input.includes('experience') ||
+    input.includes('parcours') ||
+    input.includes('travaille') ||
     input.includes('job') ||
-    input.includes('carrière') ||
+    input.includes('carriere') ||
     input.includes('entreprise')
   ) {
-    const latestExp = cvData.experience[0];
-    const expSummary = cvData.experience.map(exp => `- ${exp.company} : ${exp.title} (${exp.dates})`).join(NL);
     return {
-      content: `David a une solide expérience en ingénierie logicielle. Son poste actuel est ${latestExp.title} chez ${latestExp.company}.${NL}${NL}Voici son parcours :${NL}${expSummary}`,
+      content: `${firstName} a une solide experience en ingenierie logicielle. Consultez la section "A Propos" pour decouvrir son parcours complet.`,
       type: 'text'
     };
   }
 
   if (
-    input.includes('compétence') || 
-    input.includes('stack') || 
-    input.includes('techno') || 
+    input.includes('competence') ||
+    input.includes('stack') ||
+    input.includes('techno') ||
     input.includes('langage') ||
     input.includes('sais-tu faire') ||
     input.includes('expertise') ||
     input.includes('domaine')
   ) {
-    const { frontend, backend, tools } = cvData.skills;
     return {
-      content: `David possède une expertise variée en tant que ${cvData.personalInformation.title} :${NL}${NL}- **Frontend**: ${frontend.join(', ')}${NL}- **Backend**: ${backend.join(', ')}${NL}- **Outils & DevOps**: ${tools.join(', ')}`,
+      content: `${firstName} possede une expertise variee en tant que ${owner.title}. Visitez la section "A Propos" pour voir la liste complete de ses competences techniques.`,
       type: 'text'
     };
   }
 
   if (
-    input.includes('contact') || 
-    input.includes('email') || 
-    input.includes('téléphone') || 
+    input.includes('contact') ||
+    input.includes('email') ||
+    input.includes('telephone') ||
     input.includes('joindre') ||
     input.includes('linkedin') ||
     input.includes('github') ||
-    input.includes('écrire')
+    input.includes('ecrire')
   ) {
-    const { email, phone, linkedin, github, location } = cvData.personalInformation;
-    return {
-      content: `Vous pouvez contacter David par les moyens suivants :${NL}- **Email**: ${email}${NL}- **Téléphone**: ${phone}${NL}- **Localisation**: ${location}${NL}- **LinkedIn**: ${linkedin}${NL}- **GitHub**: ${github}`,
-      type: 'text'
-    };
+    const lines = [
+      `Vous pouvez contacter ${firstName} par les moyens suivants :`,
+      `- **Email**: ${owner.email}`,
+      owner.phone ? `- **Telephone**: ${owner.phone}` : '',
+      `- **Localisation**: ${owner.location}`,
+      envConfig.social.linkedin ? `- **LinkedIn**: ${envConfig.social.linkedin}` : '',
+      envConfig.social.github ? `- **GitHub**: ${envConfig.social.github}` : '',
+    ].filter(Boolean);
+    return { content: lines.join(NL), type: 'text' };
   }
 
   if (
-    input.includes('rendez-vous') || 
-    input.includes('disponibilité') || 
-    input.includes('réserver') || 
+    input.includes('rendez-vous') ||
+    input.includes('disponibilite') ||
+    input.includes('reserver') ||
     input.includes('rdv') ||
     input.includes('rencontrer')
   ) {
     return {
-      content: "David serait ravi d'échanger avec vous sur vos besoins. Voici les créneaux disponibles prochainement :",
+      content: `${firstName} serait ravi d'echanger avec vous sur vos besoins. Voici les creneaux disponibles prochainement :`,
       type: 'appointment_picker',
       metadata: {
         availableTimes: ["09:00", "11:00", "14:00", "16:00"],
@@ -98,16 +102,16 @@ export const processUserMessage = async (content: string): Promise<Partial<Messa
   }
 
   if (
-    input.includes('projet') || 
-    input.includes('travaux') || 
-    input.includes('réalisations') || 
+    input.includes('projet') ||
+    input.includes('travaux') ||
+    input.includes('realisations') ||
     input.includes('portfolio') ||
     input.includes('fait quoi') ||
     input.includes('mes projets')
   ) {
     const projectNames = PROJECTS.map(p => p.title).join(', ');
     return {
-      content: `David a travaillé sur plusieurs projets d'envergure, notamment : ${projectNames}. Vous pouvez voir les détails dans la section Projets.`,
+      content: `${firstName} a travaille sur plusieurs projets, notamment : ${projectNames}. Consultez la section Projets pour les details.`,
       type: 'text'
     };
   }
@@ -115,29 +119,29 @@ export const processUserMessage = async (content: string): Promise<Partial<Messa
   for (const project of PROJECTS) {
     if (input.includes(project.title.toLowerCase()) || input.includes(project.id.toLowerCase())) {
       return {
-        content: `Le projet ${project.title} est une réalisation en ${project.category}. ${project.description}`,
+        content: `Le projet ${project.title} est une realisation en ${project.category}. ${project.description}`,
         type: 'project_link',
         metadata: { projectId: project.id, projectTitle: project.title }
       };
     }
   }
 
-  if (input.includes('où est') || input.includes('où vit') || input.includes('habite') || input.includes('ville')) {
+  if (input.includes('ou est') || input.includes('ou vit') || input.includes('habite') || input.includes('ville')) {
     return {
-      content: `David est basé à ${cvData.personalInformation.location}. Il est disponible pour des missions en présentiel ou en remote.`,
+      content: `${firstName} est base a ${owner.location}. Il est disponible pour des missions en presentiel ou en remote.`,
       type: 'text'
     };
   }
 
   if (input.includes('blog') || input.includes('articles') || input.includes('lire le blog')) {
     return {
-      content: `David partage aussi ses connaissances sur son blog. Voici les articles récents : ${blogPosts.slice(0, 2).map(b => b.title).join(' et ')}.`,
+      content: `${firstName} partage ses connaissances sur son blog. Visitez la section Blog pour decouvrir les articles.`,
       type: 'text'
     };
   }
 
   return {
-    content: `Je peux vous renseigner sur le parcours de David (expérience, compétences), ses projets récents, ou vous aider à le contacter via son email (${cvData.personalInformation.email}) ou en prenant rendez-vous.`,
+    content: `Je peux vous renseigner sur le parcours de ${firstName} (experience, competences), ses projets recents, ou vous aider a le contacter via son email (${owner.email}) ou en prenant rendez-vous.`,
     type: 'text'
   };
 };

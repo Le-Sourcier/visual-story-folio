@@ -25,8 +25,8 @@ import { ThemeProvider } from './components/portfolio/ThemeContext';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ThemeTransition } from './components/portfolio/ThemeTransition';
 import { ChatbotContainer } from './components/portfolio/chatbot/ChatbotContainer';
-import { cvData } from './data/cvData';
 import { useProfile } from './hooks/useProfile';
+import { envConfig } from './config/env';
 import { SeoHead } from './components/shared/SeoHead';
 import { CookieConsent } from './components/portfolio/CookieConsent';
 
@@ -69,7 +69,6 @@ function HomePage() {
 
 function Layout({ children, hideNavFooter = false }: { children: React.ReactNode; hideNavFooter?: boolean }) {
   const profile = useProfile();
-  const [firstName] = profile.name.split(' ');
 
   return (
     <div className="min-h-screen bg-background text-foreground selection:bg-primary selection:text-primary-foreground font-sans antialiased transition-colors duration-500">
@@ -84,7 +83,7 @@ function Layout({ children, hideNavFooter = false }: { children: React.ReactNode
           <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-12">
             <div className="flex flex-col items-center md:items-start gap-6">
               <Link to="/" className="text-3xl font-black tracking-tighter">
-                {firstName.toUpperCase()}<span className="text-primary">.</span>
+                {envConfig.appBrand}<span className="text-primary">.</span>
               </Link>
               <p className="text-muted-foreground font-medium text-center md:text-left">
                 {profile.title}<br /> base a {profile.location}.

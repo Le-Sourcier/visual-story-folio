@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import { envConfig } from '@/config/env';
 
 export type ThemeMode = 'light' | 'dark' | 'system';
 
@@ -69,27 +70,27 @@ interface SettingsActions {
 type SettingsStore = SettingsState & SettingsActions;
 
 const defaultProfile: ProfileData = {
-  name: 'Yao David Logan',
-  email: 'admin@logan.dev',
-  title: 'Developpeur Fullstack & Software Engineer',
-  location: 'Lome, TOGO',
-  bio: 'Passionne par le developpement web et mobile, je cree des experiences numeriques performantes et elegantes.',
-  avatar: 'https://storage.googleapis.com/dala-prod-public-storage/generated-images/564508a5-e18e-4304-b909-f59e34b774ee/profile-picture-4826774e-1770728429712.webp',
+  name: envConfig.owner.name,
+  email: envConfig.owner.email,
+  title: envConfig.owner.title,
+  location: envConfig.owner.location,
+  bio: envConfig.owner.bio,
+  avatar: envConfig.owner.avatar,
 };
 
 const defaultSocialLinks: SocialLinks = {
-  github: 'https://github.com/yaologan',
-  linkedin: 'https://linkedin.com/in/yaologan',
-  twitter: '',
-  website: '',
+  github: envConfig.social.github,
+  linkedin: envConfig.social.linkedin,
+  twitter: envConfig.social.twitter,
+  website: envConfig.social.website,
 };
 
 const defaultSeo: SeoData = {
-  siteTitle: 'Yao David Logan | Portfolio',
-  metaDescription: 'Developpeur Fullstack & Software Engineer base a Lome. Specialise en React, Node.js et TypeScript.',
-  keywords: 'developpeur, fullstack, react, node, typescript, portfolio',
+  siteTitle: envConfig.appName,
+  metaDescription: envConfig.appDescription,
+  keywords: '',
   ogImage: '',
-  ogTitle: 'Yao David Logan - Portfolio',
+  ogTitle: envConfig.appName,
   ogType: 'website',
 };
 
@@ -100,12 +101,12 @@ const defaultDisplay: DisplayPreferences = {
 };
 
 const defaultChatbot: ChatbotSettings = {
-  enabled: true,
-  welcomeMessage: "Bonjour ! 👋 Je suis l'assistant de **Yao David Logan**.\n\nJe peux vous parler de son parcours, ses competences, ses projets ou vous aider a prendre rendez-vous. Comment puis-je vous aider ?",
+  enabled: envConfig.features.chatbot,
+  welcomeMessage: envConfig.chatbot.welcomeMessage,
   quickActions: [
     { id: '1', label: 'Mes Projets', prompt: 'Montre-moi tes projets' },
     { id: '2', label: 'Rendez-vous', prompt: 'Je veux prendre rendez-vous' },
-    { id: '3', label: 'Mon Profil', prompt: 'Qui est David Logan ?' },
+    { id: '3', label: 'Mon Profil', prompt: `Qui est ${envConfig.owner.name.split(' ').pop()} ?` },
     { id: '4', label: 'Competences', prompt: 'Quelles sont tes competences ?' },
     { id: '5', label: 'Lire le Blog', prompt: 'Montre-moi le blog' },
     { id: '6', label: 'Contact', prompt: 'Comment te contacter ?' },

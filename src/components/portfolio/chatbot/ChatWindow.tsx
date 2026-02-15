@@ -7,6 +7,7 @@ import { QuickActions } from './QuickActions';
 import { Message, QuickAction } from './types';
 import { ScrollArea } from '../../ui/scroll-area';
 import { cn } from '../../../lib/utils';
+import { envConfig } from '@/config/env';
 
 interface ChatWindowProps {
   messages: Message[];
@@ -18,7 +19,7 @@ interface ChatWindowProps {
   onReset: () => void;
 }
 
-const AI_AVATAR = "https://storage.googleapis.com/dala-prod-public-storage/generated-images/564508a5-e18e-4304-b909-f59e34b774ee/ai-avatar-ca4be779-1770887268386.webp";
+const AI_AVATAR = envConfig.chatbot.avatar;
 
 export const ChatWindow: React.FC<ChatWindowProps> = ({
   messages,

@@ -6,11 +6,11 @@ import { ChatWindow } from './ChatWindow';
 import { cn } from '../../../lib/utils';
 import { hasConsented } from '@/hooks/useCookieConsent';
 import { useSettingsStore } from '@/stores/settingsStore';
+import { envConfig } from '@/config/env';
 
 export const ChatbotContainer: React.FC = () => {
-  const envEnabled = import.meta.env.VITE_CHATBOT_ENABLED !== 'false';
   const chatbotEnabled = useSettingsStore((s) => s.chatbot.enabled);
-  const isEnabled = envEnabled && chatbotEnabled;
+  const isEnabled = envConfig.features.chatbot && chatbotEnabled;
 
   const {
     isOpen,

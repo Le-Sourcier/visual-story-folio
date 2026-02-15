@@ -1,7 +1,8 @@
 import type { ApiResponse, ApiError } from '@/types/admin.types';
+import { envConfig } from '@/config/env';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
-const API_TIMEOUT = parseInt(import.meta.env.VITE_API_TIMEOUT || '30000', 10);
+const API_URL = envConfig.apiUrl;
+const API_TIMEOUT = envConfig.apiTimeout;
 
 // Token management — single source: localStorage keys
 const TOKEN_KEY = 'admin_token';

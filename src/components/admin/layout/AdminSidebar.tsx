@@ -17,6 +17,7 @@ import { useAuthStore } from '@/stores/authStore';
 import { useSettingsStore } from '@/stores/settingsStore';
 import { useLogout } from '@/hooks/queries';
 import { cn } from '@/lib/utils';
+import { envConfig } from '@/config/env';
 
 const navSections = [
   {
@@ -70,11 +71,11 @@ export function AdminSidebar({ unreadCount = 0 }: AdminSidebarProps) {
       )}>
         <div className="flex items-center gap-2.5">
           <div className="w-8 h-8 rounded-lg bg-white flex items-center justify-center shrink-0">
-            <span className="text-zinc-950 font-black text-sm">L</span>
+            <span className="text-zinc-950 font-black text-sm">{envConfig.appBrand.charAt(0)}</span>
           </div>
           {!sidebarCollapsed && (
             <span className="text-[15px] font-semibold text-white tracking-tight">
-              Logan<span className="text-zinc-500">admin</span>
+              {envConfig.appBrand.toLowerCase()}<span className="text-zinc-500">admin</span>
             </span>
           )}
         </div>
@@ -163,7 +164,7 @@ export function AdminSidebar({ unreadCount = 0 }: AdminSidebarProps) {
                 {profile.name || user?.name || 'Admin'}
               </p>
               <p className="text-[11px] text-zinc-600 truncate">
-                {profile.email || user?.email || 'admin@logan.dev'}
+                {profile.email || user?.email || envConfig.owner.email}
               </p>
             </div>
           </div>
