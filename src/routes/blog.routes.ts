@@ -7,6 +7,9 @@ import {
   updatePost,
   deletePost,
   addComment,
+  trackView,
+  trackShare,
+  getBlogStats,
 } from '../controllers/blog.controller.js';
 import { authMiddleware, adminMiddleware } from '../middlewares/auth.middleware.js';
 import { validate } from '../middlewares/validation.middleware.js';
@@ -182,43 +185,13 @@ router.delete('/:id', authMiddleware, adminMiddleware, validate(blogPostIdValida
  */
 router.post('/:id/comments', validate(createCommentValidator), addComment);
 
-/**
- * @swagger
- * /api/blog/{id}/comments:
- *   post:
- *     summary: Add a comment to a blog post
- *     tags: [Blog]
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: string
- *           format: uuid
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             required:
- *               - author
- *               - email
- *               - content
- *             properties:
- *               author:
- *                 type: string
- *               email:
- *                 type: string
- *                 format: email
- *               content:
- *                 type: string
- *     responses:
- *       201:
- *         description: Comment added
- *       404:
- *         description: Post not found
- */
-router.post('/:id/comments', validate(createCommentValidator), addComment);
+// POST /api/blog/:id/view   -- track a view (public)
+router.post('/:id/view', validate(blogPostIdValidator), trackView);
+
+// POST /api/blog/:id/share  -- track a share (public)
+router.post('/:id/share', validate(blogPostIdValidator), trackShare);
+
+// GET /api/blog/stats        -- blog analytics (admin)
+router.get('/stats/overview', authMiddleware, adminMiddleware, getBlogStats);
 
 export default router;

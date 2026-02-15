@@ -1,3 +1,4 @@
+import { fn, col } from 'sequelize';
 import BlogPost, { Comment } from '../models/BlogPost.js';
 import { IBlogPost, IBlogComment } from '../types/entities.types.js';
 import { AppError } from '../middlewares/error.middleware.js';
@@ -103,6 +104,56 @@ class BlogService {
       order: [['createdAt', 'DESC']],
     });
     return posts;
+  }
+
+  async incrementView(id: string): Promise<void> {
+    const post = await BlogPost.findByPk(id);
+    if (!post) {
+      throw new AppError('Blog post not found', HttpStatus.NOT_FOUND, ErrorCode.NOT_FOUND);
+    }
+    await post.increment('viewCount');
+  }
+
+  async incrementShare(id: string): Promise<void> {
+    const post = await BlogPost.findByPk(id);
+    if (!post) {
+      throw new AppError('Blog post not found', HttpStatus.NOT_FOUND, ErrorCode.NOT_FOUND);
+    }
+    await post.increment('shareCount');
+  }
+
+  async getStats(): Promise<{
+    totalViews: number;
+    totalShares: number;
+    totalComments: number;
+    totalPosts: number;
+    publishedPosts: number;
+    topPosts: Pick<IBlogPost, 'id' | 'title' | 'slug' | 'viewCount' | 'shareCount'>[];
+  }> {
+    const [viewsResult, sharesResult] = await Promise.all([
+      BlogPost.sum('viewCount'),
+      BlogPost.sum('shareCount'),
+    ]);
+    const totalComments = await Comment.count();
+    const totalPosts = await BlogPost.count();
+    const publishedPosts = await BlogPost.count({ where: { published: true } });
+
+    const topPosts = await BlogPost.findAll({
+      attributes: ['id', 'title', 'slug', 'viewCount', 'shareCount'],
+      where: { published: true },
+      order: [['viewCount', 'DESC']],
+      limit: 5,
+      raw: true,
+    });
+
+    return {
+      totalViews: viewsResult || 0,
+      totalShares: sharesResult || 0,
+      totalComments,
+      totalPosts,
+      publishedPosts,
+      topPosts: topPosts as Pick<IBlogPost, 'id' | 'title' | 'slug' | 'viewCount' | 'shareCount'>[],
+    };
   }
 }
 

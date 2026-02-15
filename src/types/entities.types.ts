@@ -112,6 +112,8 @@ export interface IBlogPost {
   readTime: string;
   author: string;
   published: boolean;
+  viewCount: number;
+  shareCount: number;
   comments?: IBlogComment[];
   createdAt?: Date;
   updatedAt?: Date;
@@ -195,7 +197,7 @@ export interface IAdmin {
 // ========================
 // Chatbot Types
 // ========================
-export type MessageType = 'text' | 'appointment_picker' | 'project_card' | 'link_list';
+export type MessageType = 'text' | 'appointment_picker' | 'project_link' | 'experience_link' | 'blog_link' | 'contact_form' | 'loading';
 
 export interface ChatMessage {
   id: string;

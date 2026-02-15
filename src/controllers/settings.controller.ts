@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { settingsService } from '../services/settings.service.js';
-import { sendSuccess } from '../helpers/response.js';
+import { sendSuccess } from '../utils/response.util.js';
 
 export const getAllSettings = async (_req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {

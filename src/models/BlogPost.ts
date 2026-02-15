@@ -52,7 +52,7 @@ Comment.init(
 );
 
 // BlogPost model
-interface BlogPostCreationAttributes extends Optional<IBlogPost, 'id' | 'createdAt' | 'updatedAt' | 'comments'> {}
+interface BlogPostCreationAttributes extends Optional<IBlogPost, 'id' | 'viewCount' | 'shareCount' | 'createdAt' | 'updatedAt' | 'comments'> {}
 
 class BlogPost extends Model<IBlogPost, BlogPostCreationAttributes> implements IBlogPost {
   declare id: string;
@@ -65,6 +65,8 @@ class BlogPost extends Model<IBlogPost, BlogPostCreationAttributes> implements I
   declare readTime: string;
   declare author: string;
   declare published: boolean;
+  declare viewCount: number;
+  declare shareCount: number;
   declare comments?: IBlogComment[];
   declare readonly createdAt: Date;
   declare readonly updatedAt: Date;
@@ -116,6 +118,16 @@ BlogPost.init(
     published: {
       type: DataTypes.BOOLEAN,
       defaultValue: false,
+    },
+    viewCount: {
+      type: DataTypes.INTEGER,
+      defaultValue: 0,
+      allowNull: false,
+    },
+    shareCount: {
+      type: DataTypes.INTEGER,
+      defaultValue: 0,
+      allowNull: false,
     },
   },
   {

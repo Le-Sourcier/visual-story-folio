@@ -66,4 +66,31 @@ export const addComment = async (req: Request, res: Response, next: NextFunction
   }
 };
 
-export default { getAllPosts, getPostById, getPostBySlug, createPost, updatePost, deletePost, addComment };
+export const trackView = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    await blogService.incrementView(req.params.id);
+    sendSuccess(res, null, 'View tracked');
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const trackShare = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    await blogService.incrementShare(req.params.id);
+    sendSuccess(res, null, 'Share tracked');
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const getBlogStats = async (_req: Request, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    const stats = await blogService.getStats();
+    sendSuccess(res, stats, 'Blog stats retrieved successfully');
+  } catch (error) {
+    next(error);
+  }
+};
+
+export default { getAllPosts, getPostById, getPostBySlug, createPost, updatePost, deletePost, addComment, trackView, trackShare, getBlogStats };
